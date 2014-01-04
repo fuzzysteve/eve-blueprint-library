@@ -48,4 +48,14 @@ class EveBlueprint
             throw new Exception('Typeid must be a number');
         }
     }
+
+    public function baseMaterials($typeid = null)
+    {
+        if ((!isset($typeid) && is_numeric($typeid))) {
+            $typeid=$this->typeid;
+        }
+        $basematerials=array();
+        $basematerials=$this->sql->basematerials($typeid);
+        return $basematerials;
+    }
 }
