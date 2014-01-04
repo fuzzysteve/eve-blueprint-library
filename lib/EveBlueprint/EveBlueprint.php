@@ -20,20 +20,20 @@ class EveBlueprint
 
     private $sql;
 
-    public function __construct(PDO $dbh, $typeid = 0)
+    public function __construct(\PDO $dbh, $typeid = 0)
     {
         
         $this->dbh = $dbh;
 
-        switch ($this->dbh->getAttribute(PDO::ATTR_DRIVER_NAME)) {
+        switch ($this->dbh->getAttribute(\PDO::ATTR_DRIVER_NAME)) {
             case 'mysql':
-                $sql=new \EveBlueprint\DatabaseVendor\Mysql();
+                $this->sql=new \EveBlueprint\DatabaseVendor\Mysql($dbh);
                 break;
             case 'postgres':
-                $sql=new \EveBlueprint\DatabaseVendor\Postgres();
+                $this->sql=new \EveBlueprint\DatabaseVendor\Postgres();
                 break;
             case 'postgres':
-                $sql=new \EveBlueprint\DatabaseVendor\Sqlite();
+                $this->sql=new \EveBlueprint\DatabaseVendor\Sqlite();
                 break;
             default:
                 throw new Exception('Database type not handled. please write a new DatabaseVendor class for it');
@@ -55,7 +55,7 @@ class EveBlueprint
             $typeid=$this->typeid;
         }
         $basematerials=array();
-        $basematerials=$this->sql->basematerials($typeid);
+        $basematerials=$this->sql->baseMaterials($typeid);
         return $basematerials;
     }
 }

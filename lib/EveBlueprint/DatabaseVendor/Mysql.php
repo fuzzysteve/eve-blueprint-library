@@ -8,7 +8,7 @@ class Mysql
     private $supportSchema;
     private $dbh;
 
-    public function __construct(PDO $dbh, $schemaName = 'eve', $supportSchema = 'evesupport')
+    public function __construct(\PDO $dbh, $schemaName = 'eve', $supportSchema = 'evesupport')
     {
         $query=$dbh->query("select count(*) from $schemaName.invBlueprintTypes");
         
@@ -46,7 +46,7 @@ class Mysql
         and bt.productTypeID=:typeid 
         and r.recycle=1) t group by typeid,name
 EOS;
-        $stmt = $dbh->prepare($sql);
+        $stmt = $this->dbh->prepare($sql);
         $stmt->execute(array(":typeid"=>$typeid));
         $basematerials=array();
         while ($row = $stmt->fetchObject()) {
