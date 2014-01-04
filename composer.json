@@ -1,0 +1,19 @@
+{
+    "name": "fuzzysteve/eve-blueprint-library",
+    "description": "blueprint details library",
+    "homepage": "https://github.com/fuzzysteve/eve-blueprint-library",
+    "keywords": ["EVE Online","blueprints"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Steve Anderson",
+            "email": "steve@fuzzysteve.co.uk",
+            "role": "Developer"
+        }
+    ],
+    "type": "library",
+    "autoload": {
+        "psr-0": { "EveBlueprint": "lib/"}
+    }
+    "require": { "fuzzysteve/eve-character":"*"}
+}
