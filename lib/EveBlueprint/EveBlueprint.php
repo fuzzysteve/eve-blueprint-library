@@ -20,6 +20,10 @@ class EveBlueprint
 
     private $sql;
 
+    private $cachedBase;
+    private $cachedExtra;
+    private $cachedSkills;
+
     public function __construct(\PDO $dbh, $typeid = 0)
     {
         
@@ -51,11 +55,52 @@ class EveBlueprint
 
     public function baseMaterials($typeid = null)
     {
-        if ((!isset($typeid) && is_numeric($typeid))) {
+        if (is_null($typeid) && !is_numeric($typeid)) {
             $typeid=$this->typeid;
         }
+        if ($typeid==$this->typeid & isset($this->cachedBase)) {
+            return $this->cachedBase;
+        }
+
         $basematerials=array();
         $basematerials=$this->sql->baseMaterials($typeid);
+        if ($typeid==$this->typeid) {
+            $this->cachedBase=$basematerials;
+        }
         return $basematerials;
+    }
+
+    public function extraMaterials($typeid = null)
+    {
+        if (is_null($typeid) && !is_numeric($typeid)) {
+            $typeid=$this->typeid;
+        }
+        if ($typeid==$this->typeid & isset($this->cachedExtra)) {
+            return $this->cachedExtra;
+        }
+
+        $extramaterials=array();
+        $extramaterials=$this->sql->extraMaterials($typeid);
+        if ($typeid==$this->typeid) {
+            $this->cachedExtra=$extramaterials;
+        }
+        return $extramaterials;
+    }
+    
+    public function skills($typeid = null)
+    {
+        if (is_null($typeid) && !is_numeric($typeid)) {
+            $typeid=$this->typeid;
+        }
+        if ($typeid==$this->typeid & isset($this->cachedSkills)) {
+            return $this->cachedSkills;
+        }
+
+        $skills=array();
+        $skills=$this->sql->skills($typeid);
+        if ($typeid==$this->typeid) {
+            $this->cachedSkills=$skills;
+        }
+        return $skills;
     }
 }
