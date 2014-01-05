@@ -197,4 +197,17 @@ class EveBlueprint
         }
         return $withpe;
     }
+
+    public function changeTypeID($typeid)
+    {
+        if (!is_numeric($typeid)) {
+            throw new Exception("TypeID must be numeric");
+        }
+        $this->typeid=$typeid;
+        unset($this->cachedBase);
+        unset($this->cachedExtra);
+        unset($this->cachedSkills);
+        unset($this->cachedActivityMaterials);
+        unset($this->cachedDetails);
+    }
 }
