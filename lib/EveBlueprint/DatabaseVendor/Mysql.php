@@ -86,7 +86,7 @@ EOS;
         return $extramaterials;
     }
 
-    public function skills($typeid)
+    public function blueprintSkills($typeid)
     {
         $sql=<<<EOS
         SELECT t.typeName name, t.typeid,r.quantity level,activityid
@@ -108,7 +108,10 @@ EOS;
                 "level"=>$row->level
             );
         }
-        $stmt=$this->dbh->prepare("select metagroupid,parentTypeID from invMetaTypes where typeid=:typeid");
+        $sql=<<<EOS
+        select metagroupid,parentTypeID from $this->schemaName.invMetaTypes where typeid=:typeid
+EOS;
+        $stmt=$this->dbh->prepare($sql);
         $stmt->execute(array(":typeid"=>$typeid));
         $metalevel=0;
         $parent=0;
@@ -117,19 +120,20 @@ EOS;
             $parent=$row->parentTypeID;
         }
         if ($metalevel==2) {
-            $inventionskills=$this->skills($parent);
+            $inventionskills=$this->blueprintSkills($parent);
             if (isset($inventionskills[8])) {
                 $skills[8]=$inventionskills[8];
             }
         } else {
             $inventionskillssql=<<<EOS
-            SELECT t.typeid,attributeid,coalesce(valueFloat,valueInt)  value,t2.typename
-            FROM ramTypeRequirements r
-            join invTypes t on (r.requiredTypeID = t.typeID)
-            join invBlueprintTypes bt on (r.typeID = bt.blueprintTypeID)
-            join invGroups g on (t.groupID = g.groupID)
-            join dgmTypeAttributes on (t.typeid=dgmTypeAttributes.typeid)
-            left join invTypes t2 on (coalesce(valueFloat,valueInt)= t2.typeid
+            SELECT t.typeid,attributeid,coalesce(valueFloat,valueInt) value,
+            t2.typename
+            FROM $this->schemaName.ramTypeRequirements r
+            join $this->schemaName.invTypes t on (r.requiredTypeID = t.typeID)
+            join $this->schemaName.invBlueprintTypes bt on (r.typeID = bt.blueprintTypeID)
+            join $this->schemaName.invGroups g on (t.groupID = g.groupID)
+            join $this->schemaName.dgmTypeAttributes on (t.typeid=dgmTypeAttributes.typeid)
+            left join $this->schemaName.invTypes t2 on (coalesce(valueFloat,valueInt) = t2.typeid
             and dgmTypeAttributes.attributeid in (182,183,184,1285,1289,1290))
             where         
             bt.productTypeID=:typeid 
@@ -185,5 +189,39 @@ EOS;
             }
         }
         return $skills;
+    }
+
+    public function blueprintDetails($typeid)
+    {
+        $sql=<<<EOS
+        select blueprintTypeID,techLevel,productionTime,wasteFactor,productivityModifier,researchProductivityTime,
+        researchMaterialTime,researchCopyTime,researchTechTime,materialModifier,maxProductionLimit 
+        FROM $this->schemaName.invBlueprintTypes 
+        where productTypeID=:typeid
+EOS;
+        $stmt = $this->dbh->prepare($sql);
+        $stmt->execute(array(":typeid"=>$typeid));
+        $details=array();
+        while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+            $details=$row;
+        }
+        
+        if ($details["techLevel"]==2) {
+            $sql=<<<EOS
+            select researchTechTime,parenttypeid,invBlueprintTypes.blueprinttypeid
+            FROM $this->schemaName.invBlueprintTypes
+            JOIN $this->schemaName.invMetaTypes on (invMetaTypes.parenttypeid=invBlueprintTypes.producttypeid)
+            where
+            invMetaTypes.typeid=:typeid
+EOS;
+            $stmt = $this->dbh->prepare($sql);
+            $stmt->execute(array(":typeid"=>$typeid));
+            while ($row = $stmt->fetchObject()) {
+                $details["researchTechTime"]=$row->researchTechTime;
+                $details["t1Product"]=$row->parenttypeid;
+                $details["t1BlueprintTypeID"]=$row->blueprinttypeid;
+            }
+        }
+        return $details;
     }
 }
