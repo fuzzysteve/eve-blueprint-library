@@ -23,6 +23,7 @@ class EveBlueprint
     private $cachedBase;
     private $cachedExtra;
     private $cachedSkills;
+    private $cachedActivityMaterials;
     private $cachedDetails;
 
     public function __construct(\PDO $dbh, $typeid = 0)
@@ -103,6 +104,24 @@ class EveBlueprint
             $this->cachedSkills=$skills;
         }
         return $skills;
+    }
+    
+    
+    public function activityMaterials($typeid = null)
+    {
+        if (is_null($typeid) && !is_numeric($typeid)) {
+            $typeid=$this->typeid;
+        }
+        if ($typeid==$this->typeid & isset($this->cachedActivityMaterials)) {
+            return $this->cachedActivityMaterials;
+        }
+
+        $activitymaterials=array();
+        $activitymaterials=$this->sql->activityMaterials($typeid);
+        if ($typeid==$this->typeid) {
+            $this->cachedActivityMaterials=$activitymaterials;
+        }
+        return $activitymaterials;
     }
 
     public function blueprintDetails($typeid = null)

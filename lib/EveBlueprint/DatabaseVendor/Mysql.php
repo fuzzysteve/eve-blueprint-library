@@ -190,6 +190,54 @@ EOS;
         }
         return $skills;
     }
+    
+    public function activityMaterials($typeid)
+    {
+        $sql=<<<EOS
+        SELECT t.typeName name, t.typeid,r.quantity quantity,r.damagePerJob damage,activityid,t.groupid
+        FROM $this->schemaName.ramTypeRequirements r
+        join $this->schemaName.invTypes t on (r.requiredTypeID = t.typeID)
+        join $this->schemaName.invBlueprintTypes bt on (r.typeID = bt.blueprintTypeID)
+        join $this->schemaName.invGroups g on (t.groupID = g.groupID)
+        where
+        bt.productTypeID=:typeid 
+        and g.categoryID != 16 
+EOS;
+        $stmt = $this->dbh->prepare($sql);
+        $stmt->execute(array(":typeid"=>$typeid));
+        $materials=array();
+        while ($row = $stmt->fetchObject()) {
+            if (716==$row->groupid) {
+                $damage=0;    
+            } else {
+                $damage=$row->damage;
+            }
+            $materials[$row->activityid][]=array(
+                "typeid"=>$row->typeid,
+                "name"=>$row->name,
+                "quantity"=>$row->quantity,
+                "damage"=>$damage,
+            );
+        }
+        $sql=<<<EOS
+        select metagroupid,parentTypeID from $this->schemaName.invMetaTypes where typeid=:typeid
+EOS;
+        $stmt=$this->dbh->prepare($sql);
+        $stmt->execute(array(":typeid"=>$typeid));
+        $metalevel=0;
+        $parent=0;
+        while ($row = $stmt->fetchObject()) {
+            $metalevel=$row->metagroupid;
+            $parent=$row->parentTypeID;
+        }
+        if ($metalevel==2) {
+            $inventionmaterials=$this->activityMaterials($parent);
+            if (isset($inventionmaterials[8])) {
+                $materials[8]=$inventionmaterials[8];
+            }
+        }
+        return $materials;
+    }
 
     public function blueprintDetails($typeid)
     {
