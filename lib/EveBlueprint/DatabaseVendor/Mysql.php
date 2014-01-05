@@ -60,7 +60,8 @@ EOS;
     public function extraMaterials($typeid)
     {
         $sql=<<<EOS
-        SELECT t.typeName name, r.quantity quantity, r.damagePerJob damage,t.typeID typeid 
+        select name,typeid,max(quantity) quantity ,max(damage) damage ,max(base) base from (
+        SELECT t.typeName name, r.quantity quantity, r.damagePerJob damage,t.typeID typeid ,0 base
         FROM $this->schemaName.ramTypeRequirements r
         join $this->schemaName.invTypes t on (r.requiredTypeID = t.typeID)
         join $this->schemaName.invBlueprintTypes bt on ( r.typeID = bt.blueprintTypeID)
@@ -69,6 +70,12 @@ EOS;
         r.activityID = 1 
         and bt.productTypeID=:typeid 
         and g.categoryID != 16
+        union
+        select typename name,0 quantity,0 damage,invTypes.typeid,1 base
+        from $this->schemaName.invTypeMaterials
+        join $this->schemaName.invTypes on (invTypeMaterials.materialtypeid=invTypes.typeid)
+        where invTypeMaterials.typeid=:typeid
+        ) t group by name,typeid
 EOS;
         $stmt = $this->dbh->prepare($sql);
         $stmt->execute(array(":typeid"=>$typeid));
@@ -79,7 +86,8 @@ EOS;
                     "typeid"=>$row->typeid,
                     "name"=>$row->name,
                     "quantity"=>$row->quantity,
-                    "damage"=>$row->damage
+                    "damage"=>$row->damage,
+                    "baseMaterial"=>$row->base
                 );
             }
         }
@@ -208,7 +216,7 @@ EOS;
         $materials=array();
         while ($row = $stmt->fetchObject()) {
             if (716==$row->groupid) {
-                $damage=0;    
+                $damage=0;
             } else {
                 $damage=$row->damage;
             }
