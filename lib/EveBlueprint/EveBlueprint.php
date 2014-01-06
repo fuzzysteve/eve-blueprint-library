@@ -42,7 +42,7 @@ class EveBlueprint
                 $this->sql=new \EveBlueprint\DatabaseVendor\Sqlite();
                 break;
             default:
-                throw new Exception('Database type not handled. please write a new DatabaseVendor class for it');
+                throw new \Exception('Database type not handled. please write a new DatabaseVendor class for it');
         }
                 
 
@@ -51,7 +51,7 @@ class EveBlueprint
         if (is_numeric($typeid)) {
             $this->typeid = $typeid;
         } else {
-            throw new Exception('Typeid must be a number');
+            throw new \Exception('Typeid must be a number');
         }
     }
 
@@ -147,7 +147,7 @@ class EveBlueprint
             $typeid=$this->typeid;
         }
         if (!is_numeric($me)) {
-            throw new Exception("ME must be numeric");
+            throw new \Exception("ME must be numeric");
         }
         $details=$this->blueprintDetails($typeid);
         $pe=$character->getSkill(3388);
@@ -201,7 +201,7 @@ class EveBlueprint
     public function changeTypeID($typeid)
     {
         if (!is_numeric($typeid)) {
-            throw new Exception("TypeID must be numeric");
+            throw new \Exception("TypeID must be numeric");
         }
         $this->typeid=$typeid;
         unset($this->cachedBase);

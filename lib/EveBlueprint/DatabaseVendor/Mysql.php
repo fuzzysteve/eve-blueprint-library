@@ -13,12 +13,12 @@ class Mysql
         $query=$dbh->query("select count(*) from $schemaName.invBlueprintTypes");
         
         if (!($query)) {
-            throw new Exception("$schemaName does not contain invBlueprintTypes");
+            throw new \Exception("$schemaName does not contain invBlueprintTypes");
         }
         $query->closeCursor();
         $query=$dbh->query("select count(*) from $supportSchema.inventionChance");
         if (!($query)) {
-            throw new Exception("$supportSchema does not contain inventionChance");
+            throw new \Exception("$supportSchema does not contain inventionChance");
         }
         $query->closeCursor();
         $this->schemaName=$schemaName;
