@@ -60,11 +60,10 @@ class EveBlueprint
         if (is_null($typeid) && !is_numeric($typeid)) {
             $typeid=$this->typeid;
         }
-        if ($typeid==$this->typeid & isset($this->cachedBase)) {
+        if (($typeid==$this->typeid) & isset($this->cachedBase)) {
             return $this->cachedBase;
         }
 
-        $basematerials=array();
         $basematerials=$this->sql->baseMaterials($typeid);
         if ($typeid==$this->typeid) {
             $this->cachedBase=$basematerials;
@@ -77,11 +76,10 @@ class EveBlueprint
         if (is_null($typeid) && !is_numeric($typeid)) {
             $typeid=$this->typeid;
         }
-        if ($typeid==$this->typeid & isset($this->cachedExtra)) {
+        if (($typeid==$this->typeid) & isset($this->cachedExtra)) {
             return $this->cachedExtra;
         }
 
-        $extramaterials=array();
         $extramaterials=$this->sql->extraMaterials($typeid);
         if ($typeid==$this->typeid) {
             $this->cachedExtra=$extramaterials;
@@ -94,11 +92,10 @@ class EveBlueprint
         if (is_null($typeid) && !is_numeric($typeid)) {
             $typeid=$this->typeid;
         }
-        if ($typeid==$this->typeid & isset($this->cachedSkills)) {
+        if (($typeid==$this->typeid) & isset($this->cachedSkills)) {
             return $this->cachedSkills;
         }
 
-        $skills=array();
         $skills=$this->sql->blueprintSkills($typeid);
         if ($typeid==$this->typeid) {
             $this->cachedSkills=$skills;
@@ -112,11 +109,10 @@ class EveBlueprint
         if (is_null($typeid) && !is_numeric($typeid)) {
             $typeid=$this->typeid;
         }
-        if ($typeid==$this->typeid & isset($this->cachedActivityMaterials)) {
+        if (($typeid==$this->typeid) & isset($this->cachedActivityMaterials)) {
             return $this->cachedActivityMaterials;
         }
 
-        $activitymaterials=array();
         $activitymaterials=$this->sql->activityMaterials($typeid);
         if ($typeid==$this->typeid) {
             $this->cachedActivityMaterials=$activitymaterials;
@@ -129,11 +125,10 @@ class EveBlueprint
         if (is_null($typeid) && !is_numeric($typeid)) {
             $typeid=$this->typeid;
         }
-        if ($typeid==$this->typeid & isset($this->cachedDetails)) {
+        if (($typeid==$this->typeid) & isset($this->cachedDetails)) {
             return $this->cachedDetails;
         }
 
-        $details=array();
         $details=$this->sql->blueprintDetails($typeid);
         if ($typeid==$this->typeid) {
             $this->cachedDetails=$details;
