@@ -13,7 +13,7 @@
     ],
     "type": "library",
     "autoload": {
-        "psr-0": { "EveBlueprint": "lib/"}
+        "psr-0": { "EveBlueprint": "src/"}
     },
     "require": { "fuzzysteve/eve-character":"*"}
 }
