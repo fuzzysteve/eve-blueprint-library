@@ -280,4 +280,30 @@ EOS;
         }
         return $details;
     }
+
+    public function checkTypeId($typeid)
+    {
+        $sql=<<<EOS
+        SELECT count(blueprintTypeID) count
+        FROM invBlueprintTypes
+        WHERE productTypeid=:typeid
+EOS;
+        $stmt = $this->dbh->prepare($sql);
+        $stmt->execute(array(":typeid"=>$typeid));
+        $row = $stmt->fetchObject();
+        if ($row->count) {
+            return $typeid;
+        }
+        $sql=<<<EOS
+        SELECT productTypeID
+        FROM invBlueprintTypes
+        WHERE blueprintTypeid=:typeid
+EOS;
+        $stmt = $this->dbh->prepare($sql);
+        $stmt->execute(array(":typeid"=>$typeid));
+        if ($row = $stmt->fetchObject()) {
+            return $row->productTypeID;
+        }
+        throw new \Exception($typeid." is not a valid product typeid, or blueprint typeid");
+    }
 }

@@ -46,12 +46,14 @@ class EveBlueprint
         }
                 
 
+        if (!is_numeric($typeid)) {
+            throw new \Exception('typeid must be a number');
+        }
 
-
-        if (is_numeric($typeid)) {
-            $this->typeid = $typeid;
+        if ($typeid != 0) {
+            $this->typeid = $this->sql->checkTypeId($typeid);
         } else {
-            throw new \Exception('Typeid must be a number');
+            $this->typeid = 0;
         }
     }
 
@@ -59,7 +61,10 @@ class EveBlueprint
     {
         if (is_null($typeid) && !is_numeric($typeid)) {
             $typeid=$this->typeid;
+        } else {
+            $typeid=$this->sql->checkTypeId($typeid);
         }
+
         if (($typeid==$this->typeid) & isset($this->cachedBase)) {
             return $this->cachedBase;
         }
@@ -75,6 +80,8 @@ class EveBlueprint
     {
         if (is_null($typeid) && !is_numeric($typeid)) {
             $typeid=$this->typeid;
+        } else {
+            $typeid=$this->sql->checkTypeId($typeid);
         }
         if (($typeid==$this->typeid) & isset($this->cachedExtra)) {
             return $this->cachedExtra;
@@ -91,6 +98,8 @@ class EveBlueprint
     {
         if (is_null($typeid) && !is_numeric($typeid)) {
             $typeid=$this->typeid;
+        } else {
+            $typeid=$this->sql->checkTypeId($typeid);
         }
         if (($typeid==$this->typeid) & isset($this->cachedSkills)) {
             return $this->cachedSkills;
@@ -108,6 +117,8 @@ class EveBlueprint
     {
         if (is_null($typeid) && !is_numeric($typeid)) {
             $typeid=$this->typeid;
+        } else {
+            $typeid=$this->sql->checkTypeId($typeid);
         }
         if (($typeid==$this->typeid) & isset($this->cachedActivityMaterials)) {
             return $this->cachedActivityMaterials;
@@ -124,6 +135,8 @@ class EveBlueprint
     {
         if (is_null($typeid) && !is_numeric($typeid)) {
             $typeid=$this->typeid;
+        } else {
+            $typeid=$this->sql->checkTypeId($typeid);
         }
         if (($typeid==$this->typeid) & isset($this->cachedDetails)) {
             return $this->cachedDetails;
@@ -140,6 +153,8 @@ class EveBlueprint
     {
         if (is_null($typeid) && !is_numeric($typeid)) {
             $typeid=$this->typeid;
+        } else {
+            $typeid=$this->sql->checkTypeId($typeid);
         }
         if (!is_numeric($me)) {
             throw new \Exception("ME must be numeric");
@@ -172,6 +187,8 @@ class EveBlueprint
     {
         if (is_null($typeid) && !is_numeric($typeid)) {
             $typeid=$this->typeid;
+        } else {
+            $typeid=$this->sql->checkTypeId($typeid);
         }
         $pe=$character->getSkill(3388);
         $extramaterials=$this->extraMaterials($typeid);
