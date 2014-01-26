@@ -255,7 +255,7 @@ EOS;
         it1.typename productName, it2.typename blueprintName,it1.portionSize
         FROM $this->schemaName.invBlueprintTypes ibt
         JOIN $this->schemaName.invTypes it1 on ibt.producttypeid=it1.typeid
-        JOIN $this->schemaName.invTypes it1 on ibt.blueprinttypeid=it2.typeid
+        JOIN $this->schemaName.invTypes it2 on ibt.blueprinttypeid=it2.typeid
         where productTypeID=:typeid
 EOS;
         $stmt = $this->dbh->prepare($sql);
