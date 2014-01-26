@@ -215,7 +215,7 @@ class EveBlueprint
         if (!is_numeric($typeid)) {
             throw new \Exception("TypeID must be numeric");
         }
-        $this->typeid=$typeid;
+        $this->typeid=$this->sql->checkTypeId($typeid);
         unset($this->cachedBase);
         unset($this->cachedExtra);
         unset($this->cachedSkills);
