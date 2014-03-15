@@ -277,11 +277,13 @@ EOS;
     public function metaVersions($typeid)
     {
         $sql=<<<EOS
-        select invMetaTypes.typeid,typename,coalesce(valuefloat,valueint) level 
-        from $this->schemaName.invMetaTypes
-        join $this->schemaName.invTypes on invMetaTypes.typeid=invTypes.typeid
-        join $this->schemaName.dgmTypeAttributes on (dgmTypeAttributes.typeid=invMetaTypes.typeid and attributeID=633) 
-        where metaGroupID=1 and parenttypeid=:typeid
+        SELECT invMetaTypes.typeid,typename,coalesce(valuefloat,valueint) level 
+        FROM $this->schemaName.invMetaTypes
+        JOIN $this->schemaName.invTypes on invMetaTypes.typeid=invTypes.typeid
+        JOIN $this->schemaName.dgmTypeAttributes on (dgmTypeAttributes.typeid=invMetaTypes.typeid and attributeID=633) 
+        WHERE metaGroupID=1 
+        AND (parenttypeid=:typeid 
+        OR parenttypeid in (select parenttypeid from $this->schemaName.invMetaTypes where typeid=:typeid)
 EOS;
         $stmt = $this->dbh->prepare($sql);
         $stmt->execute(array(":typeid"=>$typeid));
