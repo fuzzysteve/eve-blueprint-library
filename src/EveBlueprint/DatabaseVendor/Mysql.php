@@ -315,7 +315,7 @@ EOS;
         $stmt->execute(array(":typeid"=>$typeid));
         $chance=0;
         while ($row = $stmt->fetchObject()) {
-            $chance=$row->chance;
+            $chance=(float)$row->chance;
         }
         return $chance;
     }
