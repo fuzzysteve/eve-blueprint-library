@@ -283,7 +283,7 @@ EOS;
         JOIN $this->schemaName.dgmTypeAttributes on (dgmTypeAttributes.typeid=invMetaTypes.typeid and attributeID=633) 
         WHERE metaGroupID=1 
         AND (parenttypeid=:typeid 
-        OR parenttypeid in (select parenttypeid from $this->schemaName.invMetaTypes where typeid=:typeid)
+        OR parenttypeid in (select parenttypeid from $this->schemaName.invMetaTypes where typeid=:typeid))
 EOS;
         $stmt = $this->dbh->prepare($sql);
         $stmt->execute(array(":typeid"=>$typeid));
