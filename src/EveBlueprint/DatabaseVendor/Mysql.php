@@ -44,7 +44,7 @@ EOS;
         $basematerials=array();
         while ($row = $stmt->fetchObject()) {
             if ($row->quantity>0) {
-                $basematerials[]=array("typeid"=>(int)$row->typeid,"name"=>(int)$row->name,"quantity"=>(int)$row->quantity);
+                $basematerials[]=array("typeid"=>(int)$row->typeid,"name"=>$row->name,"quantity"=>(int)$row->quantity);
             }
         }
         return $basematerials;
