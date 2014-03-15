@@ -25,6 +25,9 @@ class EveBlueprint
     private $cachedSkills;
     private $cachedActivityMaterials;
     private $cachedDetails;
+    private $cachedMetaVersions;
+    private $cachedInventionChance;
+    private $cachedDecryptors;
 
     public function __construct(\PDO $dbh, $typeid = 0)
     {
@@ -42,18 +45,16 @@ class EveBlueprint
                 $this->sql=new \EveBlueprint\DatabaseVendor\Sqlite();
                 break;
             default:
-                throw new \Exception('Database type not handled. please write a new DatabaseVendor class for it');
+                throw new Exception('Database type not handled. please write a new DatabaseVendor class for it');
         }
                 
 
-        if (!is_numeric($typeid)) {
-            throw new \Exception('typeid must be a number');
-        }
 
-        if ($typeid != 0) {
-            $this->typeid = $this->sql->checkTypeId($typeid);
+
+        if (is_numeric($typeid)) {
+            $this->typeid = $typeid;
         } else {
-            $this->typeid = 0;
+            throw new Exception('Typeid must be a number');
         }
     }
 
@@ -61,14 +62,12 @@ class EveBlueprint
     {
         if (is_null($typeid) && !is_numeric($typeid)) {
             $typeid=$this->typeid;
-        } else {
-            $typeid=$this->sql->checkTypeId($typeid);
         }
-
-        if (($typeid==$this->typeid) & isset($this->cachedBase)) {
+        if ($typeid==$this->typeid & isset($this->cachedBase)) {
             return $this->cachedBase;
         }
 
+        $basematerials=array();
         $basematerials=$this->sql->baseMaterials($typeid);
         if ($typeid==$this->typeid) {
             $this->cachedBase=$basematerials;
@@ -80,13 +79,12 @@ class EveBlueprint
     {
         if (is_null($typeid) && !is_numeric($typeid)) {
             $typeid=$this->typeid;
-        } else {
-            $typeid=$this->sql->checkTypeId($typeid);
         }
-        if (($typeid==$this->typeid) & isset($this->cachedExtra)) {
+        if ($typeid==$this->typeid & isset($this->cachedExtra)) {
             return $this->cachedExtra;
         }
 
+        $extramaterials=array();
         $extramaterials=$this->sql->extraMaterials($typeid);
         if ($typeid==$this->typeid) {
             $this->cachedExtra=$extramaterials;
@@ -98,13 +96,12 @@ class EveBlueprint
     {
         if (is_null($typeid) && !is_numeric($typeid)) {
             $typeid=$this->typeid;
-        } else {
-            $typeid=$this->sql->checkTypeId($typeid);
         }
-        if (($typeid==$this->typeid) & isset($this->cachedSkills)) {
+        if ($typeid==$this->typeid & isset($this->cachedSkills)) {
             return $this->cachedSkills;
         }
 
+        $skills=array();
         $skills=$this->sql->blueprintSkills($typeid);
         if ($typeid==$this->typeid) {
             $this->cachedSkills=$skills;
@@ -117,13 +114,12 @@ class EveBlueprint
     {
         if (is_null($typeid) && !is_numeric($typeid)) {
             $typeid=$this->typeid;
-        } else {
-            $typeid=$this->sql->checkTypeId($typeid);
         }
-        if (($typeid==$this->typeid) & isset($this->cachedActivityMaterials)) {
+        if ($typeid==$this->typeid & isset($this->cachedActivityMaterials)) {
             return $this->cachedActivityMaterials;
         }
 
+        $activitymaterials=array();
         $activitymaterials=$this->sql->activityMaterials($typeid);
         if ($typeid==$this->typeid) {
             $this->cachedActivityMaterials=$activitymaterials;
@@ -135,13 +131,12 @@ class EveBlueprint
     {
         if (is_null($typeid) && !is_numeric($typeid)) {
             $typeid=$this->typeid;
-        } else {
-            $typeid=$this->sql->checkTypeId($typeid);
         }
-        if (($typeid==$this->typeid) & isset($this->cachedDetails)) {
+        if ($typeid==$this->typeid & isset($this->cachedDetails)) {
             return $this->cachedDetails;
         }
 
+        $details=array();
         $details=$this->sql->blueprintDetails($typeid);
         if ($typeid==$this->typeid) {
             $this->cachedDetails=$details;
@@ -153,11 +148,9 @@ class EveBlueprint
     {
         if (is_null($typeid) && !is_numeric($typeid)) {
             $typeid=$this->typeid;
-        } else {
-            $typeid=$this->sql->checkTypeId($typeid);
         }
         if (!is_numeric($me)) {
-            throw new \Exception("ME must be numeric");
+            throw new Exception("ME must be numeric");
         }
         $details=$this->blueprintDetails($typeid);
         $pe=$character->getSkill(3388);
@@ -187,8 +180,6 @@ class EveBlueprint
     {
         if (is_null($typeid) && !is_numeric($typeid)) {
             $typeid=$this->typeid;
-        } else {
-            $typeid=$this->sql->checkTypeId($typeid);
         }
         $pe=$character->getSkill(3388);
         $extramaterials=$this->extraMaterials($typeid);
@@ -213,13 +204,67 @@ class EveBlueprint
     public function changeTypeID($typeid)
     {
         if (!is_numeric($typeid)) {
-            throw new \Exception("TypeID must be numeric");
+            throw new Exception("TypeID must be numeric");
         }
-        $this->typeid=$this->sql->checkTypeId($typeid);
+        $this->typeid=$typeid;
         unset($this->cachedBase);
         unset($this->cachedExtra);
         unset($this->cachedSkills);
         unset($this->cachedActivityMaterials);
         unset($this->cachedDetails);
+        unset($this->cachedMetaVersions);
+        unset($this->cachedInventionChance);
+        unset($this->cachedDecryptors);
+    }
+
+    public function metaVersions($typeid = null)
+    {
+        if (is_null($typeid) && !is_numeric($typeid)) {
+            $typeid=$this->typeid;
+        }
+        if ($typeid==$this->typeid & isset($this->cachedMetaVersions)) {
+            return $this->cachedMetaVersions;
+        }
+
+        $versions=array();
+        $versions=$this->sql->metaVersions($typeid);
+        if ($typeid==$this->typeid) {
+            $this->cachedMetaVersions=$versions;
+        }
+        return $versions;
+    }
+
+    
+    public function inventionChance($typeid = null)
+    {
+        if (is_null($typeid) && !is_numeric($typeid)) {
+            $typeid=$this->typeid;
+        }
+        if ($typeid==$this->typeid & isset($this->cachedInventionChance)) {
+            return $this->cachedInventionChance;
+        }
+        $chance=0;
+        $chance=$this->sql->inventionChance($typeid);
+        if ($typeid==$this->typeid) {
+            $this->cachedInventionChance=$chance;
+        }
+        return $chance;
+    }
+
+    public function decryptors($typeid = null)
+    {
+        if (is_null($typeid) && !is_numeric($typeid)) {
+            $typeid=$this->typeid;
+        }
+        if ($typeid==$this->typeid & isset($this->cachedDecryptors)) {
+            return $this->cachedDecryptors;
+        }
+
+        $decryptors=array();
+        $decryptors=$this->sql->decryptors($typeid);
+        if ($typeid==$this->typeid) {
+            $this->cachedDecryptors=$decryptors;
+        }
+        return $decryptors;
     }
 }

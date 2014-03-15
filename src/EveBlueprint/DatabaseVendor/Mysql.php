@@ -5,24 +5,17 @@ class Mysql
 {
 
     private $schemaName;
-    private $supportSchema;
     private $dbh;
 
-    public function __construct(\PDO $dbh, $schemaName = 'eve', $supportSchema = 'evesupport')
+    public function __construct(\PDO $dbh, $schemaName = 'eve')
     {
         $query=$dbh->query("select count(*) from $schemaName.invBlueprintTypes");
         
         if (!($query)) {
-            throw new \Exception("$schemaName does not contain invBlueprintTypes");
-        }
-        $query->closeCursor();
-        $query=$dbh->query("select count(*) from $supportSchema.inventionChance");
-        if (!($query)) {
-            throw new \Exception("$supportSchema does not contain inventionChance");
+            throw new Exception("$schemaName does not contain invBlueprintTypes");
         }
         $query->closeCursor();
         $this->schemaName=$schemaName;
-        $this->supportSchema=$supportSchema;
         $this->dbh=$dbh;
 
     }
@@ -251,11 +244,8 @@ EOS;
     {
         $sql=<<<EOS
         select blueprintTypeID,techLevel,productionTime,wasteFactor,productivityModifier,researchProductivityTime,
-        researchMaterialTime,researchCopyTime,researchTechTime,materialModifier,maxProductionLimit,
-        it1.typename productName, it2.typename blueprintName,it1.portionSize
-        FROM $this->schemaName.invBlueprintTypes ibt
-        JOIN $this->schemaName.invTypes it1 on ibt.producttypeid=it1.typeid
-        JOIN $this->schemaName.invTypes it2 on ibt.blueprinttypeid=it2.typeid
+        researchMaterialTime,researchCopyTime,researchTechTime,materialModifier,maxProductionLimit 
+        FROM $this->schemaName.invBlueprintTypes 
         where productTypeID=:typeid
 EOS;
         $stmt = $this->dbh->prepare($sql);
@@ -284,29 +274,69 @@ EOS;
         return $details;
     }
 
-    public function checkTypeId($typeid)
+    public function metaVersions($typeid)
     {
         $sql=<<<EOS
-        SELECT count(blueprintTypeID) count
-        FROM invBlueprintTypes
-        WHERE productTypeid=:typeid
+        select invMetaTypes.typeid,typename,coalesce(valuefloat,valueint) level 
+        from $this->schemaName.invMetaTypes
+        join $this->schemaName.invTypes on invMetaTypes.typeid=invTypes.typeid
+        join $this->schemaName.dgmTypeAttributes on (dgmTypeAttributes.typeid=invMetaTypes.typeid and attributeID=633) 
+        where metaGroupID=1 and parenttypeid=:typeid
 EOS;
         $stmt = $this->dbh->prepare($sql);
         $stmt->execute(array(":typeid"=>$typeid));
-        $row = $stmt->fetchObject();
-        if ($row->count) {
-            return $typeid;
+        $versions=array();
+        while ($row = $stmt->fetchObject()) {
+            $versions[$row->level]=array("name"=>$row->typename,"typeid"=>$row->typeid);
         }
+        return $versions;
+    }
+
+    public function inventionChance($typeid)
+    {
         $sql=<<<EOS
-        SELECT productTypeID
-        FROM invBlueprintTypes
-        WHERE blueprintTypeid=:typeid
+        SELECT CASE
+        WHEN t.groupID IN (419,27) OR t.typeID = 17476
+        THEN 0.20
+        WHEN t.groupID IN (26,28) OR t.typeID = 17478
+        THEN 0.25
+        WHEN t.groupID IN (25,420,513) OR t.typeID = 17480
+        THEN 0.30
+        WHEN EXISTS (SELECT * FROM $this->schemaName.invMetaTypes WHERE parentTypeID = t.typeID AND metaGroupID = 2)
+        THEN 0.40
+        ELSE 0.00
+        END chance
+        FROM $this->schemaName.invTypes t 
+        WHERE typeid in (select parenttypeid from invMetaTypes where typeid=:typeid) or typeid=:typeid
 EOS;
         $stmt = $this->dbh->prepare($sql);
         $stmt->execute(array(":typeid"=>$typeid));
-        if ($row = $stmt->fetchObject()) {
-            return $row->productTypeID;
+        $chance=0;
+        while ($row = $stmt->fetchObject()) {
+            $chance=$row->chance;
         }
-        throw new \Exception($typeid." is not a valid product typeid, or blueprint typeid");
+        return $chance;
+    }
+    
+    public function decryptors($typeid)
+    {
+        $sql=<<<EOS
+        SELECT it2.typeid,it2.typename,coalesce(dta2.valueint,dta2.valueFloat) modifier
+        FROM $this->schemaName.invBlueprintTypes ibt 
+        JOIN $this->schemaName.ramTypeRequirements rtr on (ibt.blueprinttypeid=rtr.typeid)
+        JOIN $this->schemaName.invTypes it1 on (rtr.requiredTypeID=it1.typeid and it1.groupid=716  and activityid=8)
+        JOIN $this->schemaName.dgmTypeAttributes dta on ( it1.typeid=dta.typeid and dta.attributeid=1115)
+        JOIN $this->schemaName.invTypes it2 on (it2.groupid=coalesce(dta.valueint,dta.valueFloat))
+        JOIN $this->schemaName.dgmTypeAttributes dta2 on (dta2.typeid=it2.typeid and dta2.attributeid=1112)
+        WHERE ibt.producttypeid=:typeid
+        OR ibt.producttypeid in (select parenttypeid from invMetaTypes where typeid=:typeid)
+EOS;
+        $stmt = $this->dbh->prepare($sql);
+        $stmt->execute(array(":typeid"=>$typeid));
+        $decryptors=array();
+        while ($row = $stmt->fetchObject()) {
+            $decryptors[$row->modifier]=array("name"=>$row->typename,"typeid"=>$row->typeid);
+        }
+        return $decryptors;
     }
 }
