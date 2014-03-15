@@ -44,7 +44,7 @@ EOS;
         $basematerials=array();
         while ($row = $stmt->fetchObject()) {
             if ($row->quantity>0) {
-                $basematerials[]=array("typeid"=>$row->typeid,"name"=>$row->name,"quantity"=>$row->quantity);
+                $basematerials[]=array("typeid"=>(int)$row->typeid,"name"=>(int)$row->name,"quantity"=>(int)$row->quantity);
             }
         }
         return $basematerials;
@@ -76,11 +76,11 @@ EOS;
         while ($row = $stmt->fetchObject()) {
             if ($row->quantity>0) {
                 $extramaterials[]=array(
-                    "typeid"=>$row->typeid,
+                    "typeid"=>(int)$row->typeid,
                     "name"=>$row->name,
-                    "quantity"=>$row->quantity,
-                    "damage"=>$row->damage,
-                    "baseMaterial"=>$row->base
+                    "quantity"=>(int)$row->quantity,
+                    "damage"=>(float)$row->damage,
+                    "baseMaterial"=>(int)$row->base
                 );
             }
         }
@@ -103,10 +103,10 @@ EOS;
         $stmt->execute(array(":typeid"=>$typeid));
         $skills=array();
         while ($row = $stmt->fetchObject()) {
-            $skills[$row->activityid][]=array(
-                "typeid"=>$row->typeid,
+            $skills[(int)$row->activityid][]=array(
+                "typeid"=>(int)$row->typeid,
                 "name"=>$row->name,
-                "level"=>$row->level
+                "level"=>(int)$row->level
             );
         }
         $sql=<<<EOS
@@ -154,27 +154,27 @@ EOS;
                     case 1289:
                     case 1290:
                         $holder[$row->typeid][$row->attributeid]["skill"]=array(
-                            "typeid"=>$row->value,
+                            "typeid"=>(int)$row->value,
                             "name"=>$row->typename
                         );
                         break;
                     case 277:
-                        $holder[$row->typeid][182]["level"]=$row->value;
+                        $holder[$row->typeid][182]["level"]=(int)$row->value;
                         break;
                     case 278:
-                        $holder[$row->typeid][183]["level"]=$row->value;
+                        $holder[$row->typeid][183]["level"]=(int)$row->value;
                         break;
                     case 279:
-                        $holder[$row->typeid][184]["level"]=$row->value;
+                        $holder[$row->typeid][184]["level"]=(int)$row->value;
                         break;
                     case 1286:
-                        $holder[$row->typeid][1285]["level"]=$row->value;
+                        $holder[$row->typeid][1285]["level"]=(int)$row->value;
                         break;
                     case 1287:
-                        $holder[$row->typeid][1289]["level"]=$row->value;
+                        $holder[$row->typeid][1289]["level"]=(int)$row->value;
                         break;
                     case 1288:
-                        $holder[$row->typeid][1290]["level"]=$row->value;
+                        $holder[$row->typeid][1290]["level"]=(int)$row->value;
                         break;
                 }
             }
@@ -182,9 +182,9 @@ EOS;
                 foreach ($value as $attributeid => $details) {
                     $skills[8][]=
                     array(
-                        "typeid"=>$details["skill"]["typeid"],
+                        "typeid"=>(int)$details["skill"]["typeid"],
                         "name"=>$details["skill"]["name"],
-                        "level"=>$details["level"]
+                        "level"=>(int)$details["level"]
                     );
                 }
             }
@@ -214,10 +214,10 @@ EOS;
                 $damage=$row->damage;
             }
             $materials[$row->activityid][]=array(
-                "typeid"=>$row->typeid,
+                "typeid"=>(int)$row->typeid,
                 "name"=>$row->name,
-                "quantity"=>$row->quantity,
-                "damage"=>$damage,
+                "quantity"=>(int)$row->quantity,
+                "damage"=>(float)$damage,
             );
         }
         $sql=<<<EOS
@@ -228,8 +228,8 @@ EOS;
         $metalevel=0;
         $parent=0;
         while ($row = $stmt->fetchObject()) {
-            $metalevel=$row->metagroupid;
-            $parent=$row->parentTypeID;
+            $metalevel=(int)$row->metagroupid;
+            $parent=(int)$row->parentTypeID;
         }
         if ($metalevel==2) {
             $inventionmaterials=$this->activityMaterials($parent);
