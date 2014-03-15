@@ -295,7 +295,7 @@ EOS;
     public function inventionChance($typeid)
     {
         $sql=<<<EOS
-        SELECT CASE
+        SELECT max(CASE
         WHEN t.groupID IN (419,27) OR t.typeID = 17476
         THEN 0.20
         WHEN t.groupID IN (26,28) OR t.typeID = 17478
@@ -305,9 +305,9 @@ EOS;
         WHEN EXISTS (SELECT * FROM $this->schemaName.invMetaTypes WHERE parentTypeID = t.typeID AND metaGroupID = 2)
         THEN 0.40
         ELSE 0.00
-        END chance
+        END) chance
         FROM $this->schemaName.invTypes t 
-        WHERE typeid in (select parenttypeid from invMetaTypes where typeid=:typeid) or typeid=:typeid
+        WHERE typeid in (select parenttypeid from $this->schemaName.invMetaTypes where typeid=:typeid) or typeid=:typeid
 EOS;
         $stmt = $this->dbh->prepare($sql);
         $stmt->execute(array(":typeid"=>$typeid));
@@ -329,7 +329,7 @@ EOS;
         JOIN $this->schemaName.invTypes it2 on (it2.groupid=coalesce(dta.valueint,dta.valueFloat))
         JOIN $this->schemaName.dgmTypeAttributes dta2 on (dta2.typeid=it2.typeid and dta2.attributeid=1112)
         WHERE ibt.producttypeid=:typeid
-        OR ibt.producttypeid in (select parenttypeid from invMetaTypes where typeid=:typeid)
+        OR ibt.producttypeid in (select parenttypeid from $this->schemaName.invMetaTypes where typeid=:typeid)
 EOS;
         $stmt = $this->dbh->prepare($sql);
         $stmt->execute(array(":typeid"=>$typeid));
