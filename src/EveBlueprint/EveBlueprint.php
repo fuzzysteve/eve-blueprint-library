@@ -23,7 +23,6 @@ class EveBlueprint
     private $cachedSkills;
     private $cachedActivityMaterials;
     private $cachedDetails;
-    private $cachedMetaVersions;
     private $checkedIDs;
 
     public function __construct(\PDO $dbh, $typeid = 0)
@@ -74,7 +73,7 @@ class EveBlueprint
         if (is_null($typeid) && !is_numeric($typeid)) {
             $typeid=$this->typeid;
         }
-        if ($typeid==$this->typeid & isset($this->cachedSkills)) {
+        if (($typeid==$this->typeid) and isset($this->cachedSkills)) {
             return $this->cachedSkills;
         }
 
@@ -92,7 +91,7 @@ class EveBlueprint
         if (is_null($typeid) && !is_numeric($typeid)) {
             $typeid=$this->typeid;
         }
-        if ($typeid==$this->typeid & isset($this->cachedActivityMaterials)) {
+        if (($typeid==$this->typeid) and isset($this->cachedActivityMaterials)) {
             return $this->cachedActivityMaterials;
         }
 
@@ -109,7 +108,7 @@ class EveBlueprint
         if (is_null($typeid) && !is_numeric($typeid)) {
             $typeid=$this->typeid;
         }
-        if ($typeid==$this->typeid & isset($this->cachedDetails)) {
+        if (($typeid==$this->typeid) & isset($this->cachedDetails)) {
             return $this->cachedDetails;
         }
 
@@ -127,64 +126,8 @@ class EveBlueprint
             throw new \Exception("TypeID must be numeric");
         }
         $this->typeid=$this->sql->checkTypeID($typeid);
-        unset($this->cachedBase);
-        unset($this->cachedExtra);
         unset($this->cachedSkills);
         unset($this->cachedActivityMaterials);
         unset($this->cachedDetails);
-        unset($this->cachedMetaVersions);
-        unset($this->cachedInventionChance);
-        unset($this->cachedDecryptors);
-    }
-
-    public function metaVersions($typeid = null)
-    {
-        if (is_null($typeid) && !is_numeric($typeid)) {
-            $typeid=$this->typeid;
-        }
-        if ($typeid==$this->typeid & isset($this->cachedMetaVersions)) {
-            return $this->cachedMetaVersions;
-        }
-
-        $versions=array();
-        $versions=$this->sql->metaVersions($typeid);
-        if ($typeid==$this->typeid) {
-            $this->cachedMetaVersions=$versions;
-        }
-        return $versions;
-    }
-
-    
-    public function inventionChance($typeid = null)
-    {
-        if (is_null($typeid) && !is_numeric($typeid)) {
-            $typeid=$this->typeid;
-        }
-        if ($typeid==$this->typeid & isset($this->cachedInventionChance)) {
-            return $this->cachedInventionChance;
-        }
-        $chance=0;
-        $chance=$this->sql->inventionChance($typeid);
-        if ($typeid==$this->typeid) {
-            $this->cachedInventionChance=$chance;
-        }
-        return $chance;
-    }
-
-    public function decryptors($typeid = null)
-    {
-        if (is_null($typeid) && !is_numeric($typeid)) {
-            $typeid=$this->typeid;
-        }
-        if ($typeid==$this->typeid & isset($this->cachedDecryptors)) {
-            return $this->cachedDecryptors;
-        }
-
-        $decryptors=array();
-        $decryptors=$this->sql->decryptors($typeid);
-        if ($typeid==$this->typeid) {
-            $this->cachedDecryptors=$decryptors;
-        }
-        return $decryptors;
     }
 }
