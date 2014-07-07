@@ -9,95 +9,54 @@ class Mysql
 
     public function __construct(\PDO $dbh, $schemaName = 'eve')
     {
-        $query=$dbh->query("select count(*) from $schemaName.invBlueprintTypes");
+        $query=$dbh->query("select count(*) from $schemaName.industryActivity");
         
         if (!($query)) {
-            throw new Exception("$schemaName does not contain invBlueprintTypes");
+            throw new Exception("$schemaName does not contain industryActivity");
         }
         $query->closeCursor();
         $this->schemaName=$schemaName;
         $this->dbh=$dbh;
 
     }
-
-    public function baseMaterials($typeid)
+    
+    public function checkTypeID($typeid)
     {
         $sql=<<<EOS
-        select typeid,name,greatest(0,sum(quantity)) quantity from 
-        (select invTypes.typeid typeid,invTypes.typeName name,quantity  from 
-        $this->schemaName.invTypes
-        join $this->schemaName.invTypeMaterials on (invTypeMaterials.materialTypeID=invTypes.typeID)
-        where invTypeMaterials.TypeID=:typeid
-        union 
-        select invTypes.typeid typeid,invTypes.typeName name,invTypeMaterials.quantity*r.quantity*-1 quantity 
-        from $this->schemaName.invTypes
-        join $this->schemaName.invTypeMaterials on (invTypeMaterials.materialTypeID=invTypes.typeID)
-        join $this->schemaName.ramTypeRequirements r on (invTypeMaterials.TypeID =r.requiredTypeID)
-        join $this->schemaName.invBlueprintTypes bt on (r.typeID = bt.blueprintTypeID)
-        where 
-        r.activityID = 1 
-        and bt.productTypeID=:typeid 
-        and r.recycle=1) t group by typeid,name
+        select typeid from  $this->industryBlueprints where typeid=:typeid
 EOS;
         $stmt = $this->dbh->prepare($sql);
         $stmt->execute(array(":typeid"=>$typeid));
-        $basematerials=array();
+        $checkedid=0;
         while ($row = $stmt->fetchObject()) {
-            if ($row->quantity>0) {
-                $basematerials[]=array("typeid"=>(int)$row->typeid,"name"=>$row->name,"quantity"=>(int)$row->quantity);
+            $checkedid=$row->typeid;
+        }
+        if (!$checkedid) {
+            $sql=<<<EOS
+            select typeid from $this->industryActivityProducts
+            where productTypeID=:typeid
+            and activitytypeid=1;
+EOS;
+            $stmt = $this->dbh->prepare($sql);
+            $stmt->execute(array(":typeid"=>$typeid));
+            while ($row = $stmt->fetchObject()) {
+                $checkedid=$row->typeid;
             }
         }
-        return $basematerials;
+        return $checkedid;
+
     }
 
-    public function extraMaterials($typeid)
-    {
-        $sql=<<<EOS
-        select name,typeid,max(quantity) quantity ,max(damage) damage ,max(base) base from (
-        SELECT t.typeName name, r.quantity quantity, r.damagePerJob damage,t.typeID typeid ,0 base
-        FROM $this->schemaName.ramTypeRequirements r
-        join $this->schemaName.invTypes t on (r.requiredTypeID = t.typeID)
-        join $this->schemaName.invBlueprintTypes bt on ( r.typeID = bt.blueprintTypeID)
-        join $this->schemaName.invGroups g on (t.groupID = g.groupID) 
-        where 
-        r.activityID = 1 
-        and bt.productTypeID=:typeid 
-        and g.categoryID != 16
-        union
-        select typename name,0 quantity,0 damage,invTypes.typeid,1 base
-        from $this->schemaName.invTypeMaterials
-        join $this->schemaName.invTypes on (invTypeMaterials.materialtypeid=invTypes.typeid)
-        where invTypeMaterials.typeid=:typeid
-        ) t group by name,typeid
-EOS;
-        $stmt = $this->dbh->prepare($sql);
-        $stmt->execute(array(":typeid"=>$typeid));
-        $extramaterials=array();
-        while ($row = $stmt->fetchObject()) {
-            if ($row->quantity>0) {
-                $extramaterials[]=array(
-                    "typeid"=>(int)$row->typeid,
-                    "name"=>$row->name,
-                    "quantity"=>(int)$row->quantity,
-                    "damage"=>(float)$row->damage,
-                    "baseMaterial"=>(int)$row->base
-                );
-            }
-        }
-        return $extramaterials;
-    }
 
     public function blueprintSkills($typeid)
     {
         $sql=<<<EOS
-        SELECT t.typeName name, t.typeid,r.quantity level,activityid
-        FROM $this->schemaName.ramTypeRequirements r
-        join $this->schemaName.invTypes t on (r.requiredTypeID = t.typeID)
-        join $this->schemaName.invBlueprintTypes bt on (r.typeID = bt.blueprintTypeID)
-        join $this->schemaName.invGroups g on (t.groupID = g.groupID)
-        where
-        bt.productTypeID=:typeid 
-        and g.categoryID = 16 
+        select activityTypeID,skillID,typeName,level 
+        from $this->schemaName.industryActivitySkills
+        join $this->schemaName.invTypes on industryActivitySkills.skillID=invTypes.typeID
+        where 
+        industryActivitySkills.typeID=:typeid
+        order by activityTypeID
 EOS;
         $stmt = $this->dbh->prepare($sql);
         $stmt->execute(array(":typeid"=>$typeid));
@@ -109,84 +68,27 @@ EOS;
                 "level"=>(int)$row->level
             );
         }
-        $sql=<<<EOS
-        select metagroupid,parentTypeID from $this->schemaName.invMetaTypes where typeid=:typeid
+
+        if (!isset($skills[8])) {
+            $sql=<<<EOS
+            select industryActivitySkillsactivityTypeID,skillID,typeName,level
+            from $this->schemaName.industryActivitySkills
+            join $this->schemaName.invTypes on industryActivitySkills.skillID=invTypes.typeID
+            join $this->schemaName.industryActivityProducts on 
+                (industryActivityProducts.typeID=industryActivitySkills.typeID 
+                and industryActivityProducts.productTypeID=:typeid)
+            where
+            industryActivitySkills.activityTypeID=8
 EOS;
-        $stmt=$this->dbh->prepare($sql);
-        $stmt->execute(array(":typeid"=>$typeid));
-        $metalevel=0;
-        $parent=0;
-        while ($row = $stmt->fetchObject()) {
-            $metalevel=$row->metagroupid;
-            $parent=$row->parentTypeID;
-        }
-        if ($metalevel==2) {
-            $inventionskills=$this->blueprintSkills($parent);
-            if (isset($inventionskills[8])) {
-                $skills[8]=$inventionskills[8];
-            }
-        } else {
-            $inventionskillssql=<<<EOS
-            SELECT t.typeid,attributeid,coalesce(valueFloat,valueInt) value,
-            t2.typename
-            FROM $this->schemaName.ramTypeRequirements r
-            join $this->schemaName.invTypes t on (r.requiredTypeID = t.typeID)
-            join $this->schemaName.invBlueprintTypes bt on (r.typeID = bt.blueprintTypeID)
-            join $this->schemaName.invGroups g on (t.groupID = g.groupID)
-            join $this->schemaName.dgmTypeAttributes on (t.typeid=dgmTypeAttributes.typeid)
-            left join $this->schemaName.invTypes t2 on (coalesce(valueFloat,valueInt) = t2.typeid
-            and dgmTypeAttributes.attributeid in (182,183,184,1285,1289,1290))
-            where         
-            bt.productTypeID=:typeid 
-            and g.categoryid!=16 
-            and activityid=8 
-            and dgmTypeAttributes.attributeid in (182,183,184,277,278,279,1285,1286,1289,1288,1289,1290)
-EOS;
-            $stmt=$this->dbh->prepare($inventionskillssql);
+            $stmt = $this->dbh->prepare($sql);
             $stmt->execute(array(":typeid"=>$typeid));
-            $holder=array();
+            $skills=array();
             while ($row = $stmt->fetchObject()) {
-                switch ($row->attributeid) {
-                    case 182:
-                    case 183:
-                    case 184:
-                    case 1285:
-                    case 1289:
-                    case 1290:
-                        $holder[$row->typeid][$row->attributeid]["skill"]=array(
-                            "typeid"=>(int)$row->value,
-                            "name"=>$row->typename
-                        );
-                        break;
-                    case 277:
-                        $holder[$row->typeid][182]["level"]=(int)$row->value;
-                        break;
-                    case 278:
-                        $holder[$row->typeid][183]["level"]=(int)$row->value;
-                        break;
-                    case 279:
-                        $holder[$row->typeid][184]["level"]=(int)$row->value;
-                        break;
-                    case 1286:
-                        $holder[$row->typeid][1285]["level"]=(int)$row->value;
-                        break;
-                    case 1287:
-                        $holder[$row->typeid][1289]["level"]=(int)$row->value;
-                        break;
-                    case 1288:
-                        $holder[$row->typeid][1290]["level"]=(int)$row->value;
-                        break;
-                }
-            }
-            foreach ($holder as $key => $value) {
-                foreach ($value as $attributeid => $details) {
-                    $skills[8][]=
-                    array(
-                        "typeid"=>(int)$details["skill"]["typeid"],
-                        "name"=>$details["skill"]["name"],
-                        "level"=>(int)$details["level"]
-                    );
-                }
+                $skills[(int)$row->activityid][]=array(
+                    "typeid"=>(int)$row->typeid,
+                    "name"=>$row->name,
+                    "level"=>(int)$row->level
+                );
             }
         }
         return $skills;
@@ -195,46 +97,43 @@ EOS;
     public function activityMaterials($typeid)
     {
         $sql=<<<EOS
-        SELECT t.typeName name, t.typeid,r.quantity quantity,r.damagePerJob damage,activityid,t.groupid
-        FROM $this->schemaName.ramTypeRequirements r
-        join $this->schemaName.invTypes t on (r.requiredTypeID = t.typeID)
-        join $this->schemaName.invBlueprintTypes bt on (r.typeID = bt.blueprintTypeID)
-        join $this->schemaName.invGroups g on (t.groupID = g.groupID)
+        SELECT it.typeName name, it.typeid,quantity quantity,consume,activityTypeID
+        FROM $this->schemaName.industryActivityMaterials iam
+        join $this->schemaName.invTypes it on (iam.materialTypeID = it.typeID)
         where
-        bt.productTypeID=:typeid 
-        and g.categoryID != 16 
+        iam.typeID=:typeid 
 EOS;
         $stmt = $this->dbh->prepare($sql);
         $stmt->execute(array(":typeid"=>$typeid));
         $materials=array();
         while ($row = $stmt->fetchObject()) {
-            if (716==$row->groupid) {
-                $damage=0;
-            } else {
-                $damage=$row->damage;
-            }
-            $materials[$row->activityid][]=array(
+            $materials[$row->activityTypeID][]=array(
                 "typeid"=>(int)$row->typeid,
                 "name"=>$row->name,
                 "quantity"=>(int)$row->quantity,
-                "damage"=>(float)$damage,
+                "consume"=>(int)$row->consume,
             );
         }
-        $sql=<<<EOS
-        select metagroupid,parentTypeID from $this->schemaName.invMetaTypes where typeid=:typeid
+        if (!isset($materials[8])) {
+            $sql=<<<EOS
+            SELECT it.typeName name, it.typeid,iam.quantity quantity,consume,iam.activityTypeID
+            FROM $this->schemaName.industryActivityMaterials iam
+            join $this->schemaName.invTypes it on (iam.materialTypeID = it.typeID)
+            join $this->schemaName.industryActivityProducts on
+              (industryActivityProducts.typeID=iam.typeID
+               and industryActivityProducts.productTypeID=:typeid)
+            where
+            iam.activityTypeID=8
 EOS;
-        $stmt=$this->dbh->prepare($sql);
-        $stmt->execute(array(":typeid"=>$typeid));
-        $metalevel=0;
-        $parent=0;
-        while ($row = $stmt->fetchObject()) {
-            $metalevel=(int)$row->metagroupid;
-            $parent=(int)$row->parentTypeID;
-        }
-        if ($metalevel==2) {
-            $inventionmaterials=$this->activityMaterials($parent);
-            if (isset($inventionmaterials[8])) {
-                $materials[8]=$inventionmaterials[8];
+            $stmt = $this->dbh->prepare($sql);
+            $stmt->execute(array(":typeid"=>$typeid));
+            while ($row = $stmt->fetchObject()) {
+                $materials[$row->activityTypeID][]=array(
+                    "typeid"=>(int)$row->typeid,
+                    "name"=>$row->name,
+                    "quantity"=>(int)$row->quantity,
+                    "consume"=>(int)$row->consume,
+                );
             }
         }
         return $materials;
@@ -243,34 +142,48 @@ EOS;
     public function blueprintDetails($typeid)
     {
         $sql=<<<EOS
-        select blueprintTypeID,techLevel,productionTime,wasteFactor,productivityModifier,researchProductivityTime,
-        researchMaterialTime,researchCopyTime,researchTechTime,materialModifier,maxProductionLimit 
-        FROM $this->schemaName.invBlueprintTypes 
-        where productTypeID=:typeid
+        select industryActivity.activityTypeID,time from $this->schemaName.industryActivity where typeID=:typeid
 EOS;
         $stmt = $this->dbh->prepare($sql);
         $stmt->execute(array(":typeid"=>$typeid));
-        $details=array();
-        while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
-            $details=$row;
+        $times=array();
+        while ($row = $stmt->fetchObject()) {
+            $times[$row->activityTypeID]=$row->time;
         }
-        
-        if ($details["techLevel"]==2) {
+        if (!isset($times[8])) {
             $sql=<<<EOS
-            select researchTechTime,parenttypeid,invBlueprintTypes.blueprinttypeid
-            FROM $this->schemaName.invBlueprintTypes
-            JOIN $this->schemaName.invMetaTypes on (invMetaTypes.parenttypeid=invBlueprintTypes.producttypeid)
+            select activityTypeID,time
+            from $this->schemaName.industryActivity
+            join $this->schemaName.industryActivityProducts on
+                (industryActivityProducts.typeID=industryActivity.typeID
+                 and industryActivityProducts.productTypeID=:typeid)
             where
-            invMetaTypes.typeid=:typeid
+            industryActivity.activityTypeID=8
 EOS;
             $stmt = $this->dbh->prepare($sql);
             $stmt->execute(array(":typeid"=>$typeid));
             while ($row = $stmt->fetchObject()) {
-                $details["researchTechTime"]=$row->researchTechTime;
-                $details["t1Product"]=$row->parenttypeid;
-                $details["t1BlueprintTypeID"]=$row->blueprinttypeid;
+                $times[$row->activityTypeID]=$row->time;
             }
         }
+        $sql=<<<EOS
+         select maxProductionLimit,iap.producttypeid,typename,iap.quantity
+         from $this->schemaName.industryBlueprints ib
+         join $this->schemaName.industryActivityProducts iap on (ib.typeID=iap.typeID and activityTypeid=1)
+         join $this->schemaName.invTypes on (iap.productTypeID=invTypes.typeid)
+         where ib.typeID=:typeid
+EOS;
+        $stmt = $this->dbh->prepare($sql);
+        $stmt->execute(array(":typeid"=>$typeid));
+        $row = $stmt->fetchObject();
+        $details=array();
+        $details['maxProductionLimit']=$row->maxProductionLimit;
+        $details['productTypeID']=$row->producttypeid;
+        $details['productTypeName']=$row->typename;
+        $details['productQuantity']=$row->quantity;
+        $details['times']=$times;
+
+
         return $details;
     }
 
@@ -292,53 +205,5 @@ EOS;
             $versions[$row->level]=array("name"=>$row->typename,"typeid"=>$row->typeid);
         }
         return $versions;
-    }
-
-    public function inventionChance($typeid)
-    {
-        $sql=<<<EOS
-        SELECT max(CASE
-        WHEN t.groupID IN (419,27) OR t.typeID = 17476
-        THEN 0.20
-        WHEN t.groupID IN (26,28) OR t.typeID = 17478
-        THEN 0.25
-        WHEN t.groupID IN (25,420,513) OR t.typeID = 17480
-        THEN 0.30
-        WHEN EXISTS (SELECT * FROM $this->schemaName.invMetaTypes WHERE parentTypeID = t.typeID AND metaGroupID = 2)
-        THEN 0.40
-        ELSE 0.00
-        END) chance
-        FROM $this->schemaName.invTypes t 
-        WHERE typeid in (select parenttypeid from $this->schemaName.invMetaTypes where typeid=:typeid) or typeid=:typeid
-EOS;
-        $stmt = $this->dbh->prepare($sql);
-        $stmt->execute(array(":typeid"=>$typeid));
-        $chance=0;
-        while ($row = $stmt->fetchObject()) {
-            $chance=(float)$row->chance;
-        }
-        return $chance;
-    }
-    
-    public function decryptors($typeid)
-    {
-        $sql=<<<EOS
-        SELECT it2.typeid,it2.typename,coalesce(dta2.valueint,dta2.valueFloat) modifier
-        FROM $this->schemaName.invBlueprintTypes ibt 
-        JOIN $this->schemaName.ramTypeRequirements rtr on (ibt.blueprinttypeid=rtr.typeid)
-        JOIN $this->schemaName.invTypes it1 on (rtr.requiredTypeID=it1.typeid and it1.groupid=716  and activityid=8)
-        JOIN $this->schemaName.dgmTypeAttributes dta on ( it1.typeid=dta.typeid and dta.attributeid=1115)
-        JOIN $this->schemaName.invTypes it2 on (it2.groupid=coalesce(dta.valueint,dta.valueFloat))
-        JOIN $this->schemaName.dgmTypeAttributes dta2 on (dta2.typeid=it2.typeid and dta2.attributeid=1112)
-        WHERE ibt.producttypeid=:typeid
-        OR ibt.producttypeid in (select parenttypeid from $this->schemaName.invMetaTypes where typeid=:typeid)
-EOS;
-        $stmt = $this->dbh->prepare($sql);
-        $stmt->execute(array(":typeid"=>$typeid));
-        $decryptors=array();
-        while ($row = $stmt->fetchObject()) {
-            $decryptors[$row->modifier]=array("name"=>$row->typename,"typeid"=>$row->typeid);
-        }
-        return $decryptors;
     }
 }
