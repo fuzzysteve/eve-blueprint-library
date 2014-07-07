@@ -12,7 +12,7 @@ class Mysql
         $query=$dbh->query("select count(*) from $schemaName.industryActivity");
         
         if (!($query)) {
-            throw new Exception("$schemaName does not contain industryActivity");
+            throw new \Exception("$schemaName does not contain industryActivity");
         }
         $query->closeCursor();
         $this->schemaName=$schemaName;
@@ -23,7 +23,7 @@ class Mysql
     public function checkTypeID($typeid)
     {
         $sql=<<<EOS
-        select typeid from  $this->industryBlueprints where typeid=:typeid
+        select typeid from  $this->schemaName.industryBlueprints where typeid=:typeid
 EOS;
         $stmt = $this->dbh->prepare($sql);
         $stmt->execute(array(":typeid"=>$typeid));
@@ -33,7 +33,7 @@ EOS;
         }
         if (!$checkedid) {
             $sql=<<<EOS
-            select typeid from $this->industryActivityProducts
+            select typeid from $this->schemaName.industryActivityProducts
             where productTypeID=:typeid
             and activitytypeid=1;
 EOS;

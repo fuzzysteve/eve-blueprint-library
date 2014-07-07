@@ -42,7 +42,7 @@ class EveBlueprint
                 $this->sql=new \EveBlueprint\DatabaseVendor\Sqlite();
                 break;
             default:
-                throw new Exception('Database type not handled. please write a new DatabaseVendor class for it');
+                throw new \Exception('Database type not handled. please write a new DatabaseVendor class for it');
         }
                 
 
@@ -51,7 +51,7 @@ class EveBlueprint
         if (is_numeric($typeid) and $typeid>0) {
             $this->typeid = $this->checkTypeID($typeid);
         } else {
-            throw new Exception('Typeid must be a number');
+            throw new \Exception('Typeid must be a number');
         }
     }
 
@@ -62,7 +62,7 @@ class EveBlueprint
         }
         $confirmedID=$this->sql->checkTypeID($typeid);
         if (!$confirmedID) {
-            throw new Exception("No such blueprint or produce exists");
+            throw new \Exception("No such blueprint or produce exists");
         }
         $this->checkedIDs[$typeid]=$confirmedID;
         return $this->checkedIDs[$typeid];
@@ -124,7 +124,7 @@ class EveBlueprint
     public function changeTypeID($typeid)
     {
         if (!is_numeric($typeid)) {
-            throw new Exception("TypeID must be numeric");
+            throw new \Exception("TypeID must be numeric");
         }
         $this->typeid=$this->sql->checkTypeID($typeid);
         unset($this->cachedBase);
