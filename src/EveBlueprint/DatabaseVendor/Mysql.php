@@ -7,7 +7,7 @@ class Mysql
     private $schemaName;
     private $dbh;
 
-    public function __construct(\PDO $dbh, $schemaName = 'eve')
+    public function __construct(\PDO $dbh, $schemaName = 'sdebeta')
     {
         $query=$dbh->query("select count(*) from $schemaName.industryActivity");
         
@@ -50,6 +50,7 @@ EOS;
 
     public function blueprintSkills($typeid)
     {
+        error_log($typeid."skills");
         $sql=<<<EOS
         select activityTypeID,skillID,typeName,level 
         from $this->schemaName.industryActivitySkills
@@ -62,16 +63,16 @@ EOS;
         $stmt->execute(array(":typeid"=>$typeid));
         $skills=array();
         while ($row = $stmt->fetchObject()) {
-            $skills[(int)$row->activityid][]=array(
-                "typeid"=>(int)$row->typeid,
-                "name"=>$row->name,
+            $skills[(int)$row->activityTypeID][]=array(
+                "typeid"=>(int)$row->skillID,
+                "name"=>$row->typeName,
                 "level"=>(int)$row->level
             );
         }
 
         if (!isset($skills[8])) {
             $sql=<<<EOS
-            select industryActivitySkillsactivityTypeID,skillID,typeName,level
+            select industryActivitySkills.activityTypeID,skillID,typeName,level
             from $this->schemaName.industryActivitySkills
             join $this->schemaName.invTypes on industryActivitySkills.skillID=invTypes.typeID
             join $this->schemaName.industryActivityProducts on 
@@ -82,11 +83,10 @@ EOS;
 EOS;
             $stmt = $this->dbh->prepare($sql);
             $stmt->execute(array(":typeid"=>$typeid));
-            $skills=array();
             while ($row = $stmt->fetchObject()) {
-                $skills[(int)$row->activityid][]=array(
-                    "typeid"=>(int)$row->typeid,
-                    "name"=>$row->name,
+                $skills[(int)$row->activityTypeID][]=array(
+                    "typeid"=>(int)$row->skillID,
+                    "name"=>$row->typeName,
                     "level"=>(int)$row->level
                 );
             }
@@ -195,12 +195,19 @@ EOS;
         JOIN $this->schemaName.invTypes on invMetaTypes.typeid=invTypes.typeid
         JOIN $this->schemaName.dgmTypeAttributes on (dgmTypeAttributes.typeid=invMetaTypes.typeid and attributeID=633) 
         WHERE metaGroupID=1 
-        AND (parenttypeid=:typeid 
-        OR parenttypeid in (select parenttypeid from $this->schemaName.invMetaTypes where typeid=:typeid))
+        AND parenttypeid in 
+            (SELECT parenttypeid FROM  $this->schemaName.invMetaTypes 
+             WHERE parentTypeID = 
+                (SELECT productTypeID from  $this->schemaName.industryActivityProducts where typeID=:typeid 
+                    and activityTypeID=1 limit 1)
+            OR typeID = 
+                (SELECT productTypeID from  $this->schemaName.industryActivityProducts where typeID=:typeid 
+                    and activityTypeID=1 limit 1)
+            )
+
 EOS;
         $stmt = $this->dbh->prepare($sql);
         $stmt->execute(array(":typeid"=>$typeid));
-        $versions=array();
         while ($row = $stmt->fetchObject()) {
             $versions[$row->level]=array("name"=>$row->typename,"typeid"=>$row->typeid);
         }
