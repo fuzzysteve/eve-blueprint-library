@@ -208,6 +208,7 @@ EOS;
 EOS;
         $stmt = $this->dbh->prepare($sql);
         $stmt->execute(array(":typeid"=>$typeid));
+        $versions=array();
         while ($row = $stmt->fetchObject()) {
             $versions[$row->level]=array("name"=>$row->typename,"typeid"=>$row->typeid);
         }

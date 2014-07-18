@@ -96,7 +96,6 @@ class EveBlueprint
             return $this->cachedActivityMaterials;
         }
 
-        $activitymaterials=array();
         $activitymaterials=$this->sql->activityMaterials($typeid);
         if ($typeid==$this->typeid) {
             $this->cachedActivityMaterials=$activitymaterials;
@@ -128,7 +127,6 @@ class EveBlueprint
             return $this->cachedDetails;
         }
 
-        $details=array();
         $details=$this->sql->blueprintDetails($typeid);
         if ($typeid==$this->typeid) {
             $this->cachedDetails=$details;
