@@ -167,10 +167,11 @@ EOS;
             }
         }
         $sql=<<<EOS
-         select maxProductionLimit,iap.producttypeid,typename,iap.quantity
+         select maxProductionLimit,iap.producttypeid,typename,iap.quantity,coalesce(metaGroupID,1) techLevel
          from $this->schemaName.industryBlueprints ib
          join $this->schemaName.industryActivityProducts iap on (ib.typeID=iap.typeID and activityTypeid=1)
          join $this->schemaName.invTypes on (iap.productTypeID=invTypes.typeid)
+         left join $this->schemaName.invMetaTypes on (iap.productTypeID=invMetaTypes.typeid)
          where ib.typeID=:typeid
 EOS;
         $stmt = $this->dbh->prepare($sql);
@@ -182,6 +183,7 @@ EOS;
         $details['productTypeName']=$row->typename;
         $details['productQuantity']=$row->quantity;
         $details['times']=$times;
+        $details['techLevel']=$row->techLevel;
         $sql=<<<EOS
         SELECT sum(quantity*adjustedprice) price 
         FROM $this->schemaName.industryActivityMaterials iam 
@@ -192,18 +194,20 @@ EOS;
         $stmt->execute(array(":typeid"=>$typeid));
         $row = $stmt->fetchObject();
         $details['adjustedPrice']=$row->price;
-        $sql=<<<EOS
-        SELECT sum(iam.quantity*adjustedprice) price
-        FROM $this->schemaName.industryActivityMaterials iam
-        JOIN evesupport.priceData ON (materialtypeid=priceData.typeid)
-        JOIN $this->schemaName.industryActivityProducts iap ON (iap.typeid=iam.typeid)
-        WHERE iam.activitytypeid=1 AND iap.producttypeid=:typeid
+        if ($details['techLevel']==2) {
+            $sql=<<<EOS
+            SELECT sum(iam.quantity*adjustedprice) price
+            FROM $this->schemaName.industryActivityMaterials iam
+            JOIN evesupport.priceData ON (materialtypeid=priceData.typeid)
+            JOIN $this->schemaName.industryActivityProducts iap ON (iap.typeid=iam.typeid)
+            WHERE iam.activitytypeid=1 AND iap.producttypeid=:typeid
 EOS;
-        $stmt = $this->dbh->prepare($sql);
-        $stmt->execute(array(":typeid"=>$typeid));
-        $row = $stmt->fetchObject();
-        if (!is_null($row->price)) {
-            $details['precursorAdjustedPrice']=$row->price;
+            $stmt = $this->dbh->prepare($sql);
+            $stmt->execute(array(":typeid"=>$typeid));
+            $row = $stmt->fetchObject();
+            if (!is_null($row->price)) {
+                $details['precursorAdjustedPrice']=$row->price;
+            }
         }
         return $details;
     }
