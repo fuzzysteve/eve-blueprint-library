@@ -182,8 +182,29 @@ EOS;
         $details['productTypeName']=$row->typename;
         $details['productQuantity']=$row->quantity;
         $details['times']=$times;
-
-
+        $sql=<<<EOS
+        SELECT sum(quantity*adjustedprice) price 
+        FROM $this->schemaName.industryActivityMaterials iam 
+        JOIN evesupport.priceData ON (materialtypeid=priceData.typeid) 
+        WHERE activitytypeid=1 AND iam.typeid=:typeid
+EOS;
+        $stmt = $this->dbh->prepare($sql);
+        $stmt->execute(array(":typeid"=>$typeid));
+        $row = $stmt->fetchObject();
+        $details['adjustedPrice']=$row->price;
+        $sql=<<<EOS
+        SELECT sum(iam.quantity*adjustedprice) price
+        FROM $this->schemaName.industryActivityMaterials iam
+        JOIN evesupport.priceData ON (materialtypeid=priceData.typeid)
+        JOIN $this->schemaName.industryActivityProducts iap ON (iap.typeid=iam.typeid)
+        WHERE iam.activitytypeid=1 AND iap.producttypeid=:typeid
+EOS;
+        $stmt = $this->dbh->prepare($sql);
+        $stmt->execute(array(":typeid"=>$typeid));
+        $row = $stmt->fetchObject();
+        if (!is_null($row->price)) {
+            $details['precursorAdjustedPrice']=$row->price;
+        }
         return $details;
     }
 
