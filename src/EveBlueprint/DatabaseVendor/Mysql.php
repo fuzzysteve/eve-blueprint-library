@@ -7,7 +7,7 @@ class Mysql
     private $schemaName;
     private $dbh;
 
-    public function __construct(\PDO $dbh, $schemaName = 'sdebeta')
+    public function __construct(\PDO $dbh, $schemaName = 'sdecrius1')
     {
         $query=$dbh->query("select count(*) from $schemaName.industryActivity");
         
@@ -35,7 +35,7 @@ EOS;
             $sql=<<<EOS
             select typeid from $this->schemaName.industryActivityProducts
             where productTypeID=:typeid
-            and activitytypeid=1;
+            and activityID=1;
 EOS;
             $stmt = $this->dbh->prepare($sql);
             $stmt->execute(array(":typeid"=>$typeid));
@@ -52,18 +52,18 @@ EOS;
     {
         error_log($typeid."skills");
         $sql=<<<EOS
-        select activityTypeID,skillID,typeName,level 
+        select activityID,skillID,typeName,level 
         from $this->schemaName.industryActivitySkills
         join $this->schemaName.invTypes on industryActivitySkills.skillID=invTypes.typeID
         where 
         industryActivitySkills.typeID=:typeid
-        order by activityTypeID
+        order by activityID
 EOS;
         $stmt = $this->dbh->prepare($sql);
         $stmt->execute(array(":typeid"=>$typeid));
         $skills=array();
         while ($row = $stmt->fetchObject()) {
-            $skills[(int)$row->activityTypeID][]=array(
+            $skills[(int)$row->activityID][]=array(
                 "typeid"=>(int)$row->skillID,
                 "name"=>$row->typeName,
                 "level"=>(int)$row->level
@@ -72,19 +72,19 @@ EOS;
 
         if (!isset($skills[8])) {
             $sql=<<<EOS
-            select industryActivitySkills.activityTypeID,skillID,typeName,level
+            select industryActivitySkills.activityID,skillID,typeName,level
             from $this->schemaName.industryActivitySkills
             join $this->schemaName.invTypes on industryActivitySkills.skillID=invTypes.typeID
             join $this->schemaName.industryActivityProducts on 
                 (industryActivityProducts.typeID=industryActivitySkills.typeID 
                 and industryActivityProducts.productTypeID=:typeid)
             where
-            industryActivitySkills.activityTypeID=8
+            industryActivitySkills.activityID=8
 EOS;
             $stmt = $this->dbh->prepare($sql);
             $stmt->execute(array(":typeid"=>$typeid));
             while ($row = $stmt->fetchObject()) {
-                $skills[(int)$row->activityTypeID][]=array(
+                $skills[(int)$row->activityID][]=array(
                     "typeid"=>(int)$row->skillID,
                     "name"=>$row->typeName,
                     "level"=>(int)$row->level
@@ -97,7 +97,7 @@ EOS;
     public function activityMaterials($typeid)
     {
         $sql=<<<EOS
-        SELECT it.typeName name, it.typeid,quantity quantity,consume,activityTypeID
+        SELECT it.typeName name, it.typeid,quantity quantity,consume,activityID
         FROM $this->schemaName.industryActivityMaterials iam
         join $this->schemaName.invTypes it on (iam.materialTypeID = it.typeID)
         where
@@ -107,7 +107,7 @@ EOS;
         $stmt->execute(array(":typeid"=>$typeid));
         $materials=array();
         while ($row = $stmt->fetchObject()) {
-            $materials[$row->activityTypeID][]=array(
+            $materials[$row->activityID][]=array(
                 "typeid"=>(int)$row->typeid,
                 "name"=>$row->name,
                 "quantity"=>(int)$row->quantity,
@@ -116,19 +116,19 @@ EOS;
         }
         if (!isset($materials[8])) {
             $sql=<<<EOS
-            SELECT it.typeName name, it.typeid,iam.quantity quantity,consume,iam.activityTypeID
+            SELECT it.typeName name, it.typeid,iam.quantity quantity,consume,iam.activityID
             FROM $this->schemaName.industryActivityMaterials iam
             join $this->schemaName.invTypes it on (iam.materialTypeID = it.typeID)
             join $this->schemaName.industryActivityProducts on
               (industryActivityProducts.typeID=iam.typeID
                and industryActivityProducts.productTypeID=:typeid)
             where
-            iam.activityTypeID=8
+            iam.activityID=8
 EOS;
             $stmt = $this->dbh->prepare($sql);
             $stmt->execute(array(":typeid"=>$typeid));
             while ($row = $stmt->fetchObject()) {
-                $materials[$row->activityTypeID][]=array(
+                $materials[$row->activityID][]=array(
                     "typeid"=>(int)$row->typeid,
                     "name"=>$row->name,
                     "quantity"=>(int)$row->quantity,
@@ -142,34 +142,34 @@ EOS;
     public function blueprintDetails($typeid)
     {
         $sql=<<<EOS
-        select industryActivity.activityTypeID,time from $this->schemaName.industryActivity where typeID=:typeid
+        select industryActivity.activityID,time from $this->schemaName.industryActivity where typeID=:typeid
 EOS;
         $stmt = $this->dbh->prepare($sql);
         $stmt->execute(array(":typeid"=>$typeid));
         $times=array();
         while ($row = $stmt->fetchObject()) {
-            $times[$row->activityTypeID]=$row->time;
+            $times[$row->activityID]=$row->time;
         }
         if (!isset($times[8])) {
             $sql=<<<EOS
-            select activityTypeID,time
+            select activityID,time
             from $this->schemaName.industryActivity
             join $this->schemaName.industryActivityProducts on
                 (industryActivityProducts.typeID=industryActivity.typeID
                  and industryActivityProducts.productTypeID=:typeid)
             where
-            industryActivity.activityTypeID=8
+            industryActivity.activityID=8
 EOS;
             $stmt = $this->dbh->prepare($sql);
             $stmt->execute(array(":typeid"=>$typeid));
             while ($row = $stmt->fetchObject()) {
-                $times[$row->activityTypeID]=$row->time;
+                $times[$row->activityID]=$row->time;
             }
         }
         $sql=<<<EOS
          select maxProductionLimit,iap.producttypeid,typename,iap.quantity,coalesce(metaGroupID,1) techLevel
          from $this->schemaName.industryBlueprints ib
-         join $this->schemaName.industryActivityProducts iap on (ib.typeID=iap.typeID and activityTypeid=1)
+         join $this->schemaName.industryActivityProducts iap on (ib.typeID=iap.typeID and activityID=1)
          join $this->schemaName.invTypes on (iap.productTypeID=invTypes.typeid)
          left join $this->schemaName.invMetaTypes on (iap.productTypeID=invMetaTypes.typeid)
          where ib.typeID=:typeid
@@ -188,7 +188,7 @@ EOS;
         SELECT sum(quantity*adjustedprice) price 
         FROM $this->schemaName.industryActivityMaterials iam 
         JOIN evesupport.priceData ON (materialtypeid=priceData.typeid) 
-        WHERE activitytypeid=1 AND iam.typeid=:typeid
+        WHERE activityID=1 AND iam.typeid=:typeid
 EOS;
         $stmt = $this->dbh->prepare($sql);
         $stmt->execute(array(":typeid"=>$typeid));
@@ -200,7 +200,7 @@ EOS;
             FROM $this->schemaName.industryActivityMaterials iam
             JOIN evesupport.priceData ON (materialtypeid=priceData.typeid)
             JOIN $this->schemaName.industryActivityProducts iap ON (iap.typeid=iam.typeid)
-            WHERE iam.activitytypeid=1 AND iap.producttypeid=:typeid
+            WHERE iam.activityID=1 AND iap.producttypeid=:typeid
 EOS;
             $stmt = $this->dbh->prepare($sql);
             $stmt->execute(array(":typeid"=>$typeid));
@@ -224,10 +224,10 @@ EOS;
             (SELECT parenttypeid FROM  $this->schemaName.invMetaTypes 
              WHERE parentTypeID = 
                 (SELECT productTypeID from  $this->schemaName.industryActivityProducts where typeID=:typeid 
-                    and activityTypeID=1 limit 1)
+                    and activityID=1 limit 1)
             OR typeID = 
                 (SELECT productTypeID from  $this->schemaName.industryActivityProducts where typeID=:typeid 
-                    and activityTypeID=1 limit 1)
+                    and activityID=1 limit 1)
             )
 
 EOS;
