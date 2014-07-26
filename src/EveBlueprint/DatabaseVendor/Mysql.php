@@ -196,7 +196,7 @@ EOS;
         $details['adjustedPrice']=$row->price;
         if ($details['techLevel']==2) {
             $sql=<<<EOS
-            SELECT sum(iam.quantity*adjustedprice) price
+            SELECT sum(iam.quantity*adjustedprice) price,iam.typeid
             FROM $this->schemaName.industryActivityMaterials iam
             JOIN evesupport.priceData ON (materialtypeid=priceData.typeid)
             JOIN $this->schemaName.industryActivityProducts iap ON (iap.typeid=iam.typeid)
@@ -207,6 +207,19 @@ EOS;
             $row = $stmt->fetchObject();
             if (!is_null($row->price)) {
                 $details['precursorAdjustedPrice']=$row->price;
+                $details['precursorTypeId']=$row->typeid;
+            }
+            $sql=<<<EOS
+            SELECT probability
+            FROM industryActivityProbabilities
+            WHERE producttypeid=:typeid
+            AND activityID=8
+EOS;
+            $stmt = $this->dbh->prepare($sql);
+            $stmt->execute(array(":typeid"=>$typeid));
+            $row = $stmt->fetchObject();
+            if (!is_null($row->probability)) {
+                $details['probability']=$row->probability;
             }
         }
         return $details;
