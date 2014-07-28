@@ -252,4 +252,42 @@ EOS;
         }
         return $versions;
     }
+
+    public function decryptors($typeid)
+    {
+        $sql=<<<EOS
+        SELECT distinct
+        it2.typename,
+        it2.typeid,
+        COALESCE(dta2.valueInt,dta2.valueFloat) multiplier,
+        COALESCE(dta3.valueInt,dta3.valueFloat) me,
+        COALESCE(dta4.valueInt,dta4.valueFloat) te,
+        COALESCE(dta5.valueInt,dta5.valueFloat) runs
+        FROM $this->schemaName.invTypes 
+        JOIN $this->schemaName.industryActivityMaterials iam 
+            ON (iam.materialtypeid=invTypes.typeid and iam.activityid=8 and groupid=716)
+        JOIN $this->schemaName.industryActivityProducts iap ON (iam.typeid=iap.typeid)
+        JOIN $this->schemaName.dgmTypeAttributes dta on (dta.typeid=invTypes.typeid and dta.attributeID=1115)
+        JOIN $this->schemaName.invTypes it2 on (it2.groupid=dta.valueInt)
+        JOIN $this->schemaName.dgmTypeAttributes dta2 on (dta2.typeid=it2.typeid and dta2.attributeID=1112)
+        JOIN $this->schemaName.dgmTypeAttributes dta3 on (dta3.typeid=it2.typeid and dta3.attributeID=1113)
+        JOIN $this->schemaName.dgmTypeAttributes dta4 on (dta4.typeid=it2.typeid and dta4.attributeID=1114)
+        JOIN $this->schemaName.dgmTypeAttributes dta5 on (dta5.typeid=it2.typeid and dta5.attributeID=1124)
+        WHERE iap.producttypeid=:typeid or iam.typeid=:typeid
+
+EOS;
+        $stmt = $this->dbh->prepare($sql);
+        $stmt->execute(array(":typeid"=>$typeid));
+        $decryptors=array();
+        while ($row = $stmt->fetchObject()) {
+            $decryptors[]=array(
+                "name"=>$row->typename,
+                "typeid"=>$row->typeid,
+                "multiplier"=>$row->multiplier,
+                "me"=>$row->me,
+                "te"=>$row->te,
+                "runs"=>$row->runs);
+        }
+        return $decryptors;
+    }
 }

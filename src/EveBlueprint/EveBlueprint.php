@@ -2,8 +2,6 @@
 namespace EveBlueprint;
 
 use EveBlueprint\DatabaseVendor\Mysql;
-use EveBlueprint\DatabaseVendor\Postgres;
-use EveBlueprint\DatabaseVendor\Sqlite;
 
 class EveBlueprint
 {
@@ -23,6 +21,7 @@ class EveBlueprint
     private $cachedSkills;
     private $cachedActivityMaterials;
     private $cachedDetails;
+    private $cachedDecryptors;
     private $cachedMetaVersions;
     private $checkedIDs;
 
@@ -118,6 +117,24 @@ class EveBlueprint
         }
         return $metaversions;
     }
+
+    public function decryptors($typeid = null)
+    {
+        if (is_null($typeid) && !is_numeric($typeid)) {
+            $typeid=$this->typeid;
+        }
+        if (($typeid==$this->typeid) and isset($this->cachedDecryptors)) {
+            return $this->cachedDecryptors;
+        }
+
+        $decryptors=$this->sql->decryptors($typeid);
+        if ($typeid==$this->typeid) {
+            $this->cachedDecryptors=$decryptors;
+        }
+        return $decryptors;
+    }
+
+
     public function blueprintDetails($typeid = null)
     {
         if (is_null($typeid) && !is_numeric($typeid)) {
