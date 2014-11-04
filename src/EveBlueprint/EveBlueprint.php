@@ -22,7 +22,6 @@ class EveBlueprint
     private $cachedActivityMaterials;
     private $cachedDetails;
     private $cachedDecryptors;
-    private $cachedMetaVersions;
     private $checkedIDs;
 
     public function __construct(\PDO $dbh, $typeid = 0)
@@ -52,7 +51,6 @@ class EveBlueprint
         } else {
             throw new \Exception('Typeid must be a number');
         }
-        error_log($this->typeid);
     }
 
     public function checkTypeID($typeid)
@@ -102,22 +100,6 @@ class EveBlueprint
         return $activitymaterials;
     }
 
-    public function metaVersions($typeid = null)
-    {
-        if (is_null($typeid) && !is_numeric($typeid)) {
-            $typeid=$this->typeid;
-        }
-        if (($typeid==$this->typeid) and isset($this->cachedMetaVersions)) {
-            return $this->cachedMetaVersions;
-        }
-
-        $metaversions=$this->sql->metaVersions($typeid);
-        if ($typeid==$this->typeid) {
-            $this->cachedMetaVersions=$metaversions;
-        }
-        return $metaversions;
-    }
-
     public function decryptors($typeid = null)
     {
         if (is_null($typeid) && !is_numeric($typeid)) {
@@ -127,7 +109,7 @@ class EveBlueprint
             return $this->cachedDecryptors;
         }
 
-        $decryptors=$this->sql->decryptors($typeid);
+        $decryptors=$this->sql->decryptors();
         if ($typeid==$this->typeid) {
             $this->cachedDecryptors=$decryptors;
         }

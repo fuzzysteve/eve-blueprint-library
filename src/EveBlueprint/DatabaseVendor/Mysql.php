@@ -7,7 +7,7 @@ class Mysql
     private $schemaName;
     private $dbh;
 
-    public function __construct(\PDO $dbh, $schemaName = 'sdecrius1')
+    public function __construct(\PDO $dbh, $schemaName = 'eve')
     {
         $query=$dbh->query("select count(*) from $schemaName.industryActivity");
         
@@ -50,7 +50,6 @@ EOS;
 
     public function blueprintSkills($typeid)
     {
-        error_log($typeid."skills");
         $sql=<<<EOS
         select activityID,skillID,typeName,level 
         from $this->schemaName.industryActivitySkills
@@ -225,35 +224,7 @@ EOS;
         return $details;
     }
 
-    public function metaVersions($typeid)
-    {
-        $sql=<<<EOS
-        SELECT invMetaTypes.typeid,typename,coalesce(valuefloat,valueint) level 
-        FROM $this->schemaName.invMetaTypes
-        JOIN $this->schemaName.invTypes on invMetaTypes.typeid=invTypes.typeid
-        JOIN $this->schemaName.dgmTypeAttributes on (dgmTypeAttributes.typeid=invMetaTypes.typeid and attributeID=633) 
-        WHERE metaGroupID=1 
-        AND parenttypeid in 
-            (SELECT parenttypeid FROM  $this->schemaName.invMetaTypes 
-             WHERE parentTypeID = 
-                (SELECT productTypeID from  $this->schemaName.industryActivityProducts where typeID=:typeid 
-                    and activityID=1 limit 1)
-            OR typeID = 
-                (SELECT productTypeID from  $this->schemaName.industryActivityProducts where typeID=:typeid 
-                    and activityID=1 limit 1)
-            )
-
-EOS;
-        $stmt = $this->dbh->prepare($sql);
-        $stmt->execute(array(":typeid"=>$typeid));
-        $versions=array();
-        while ($row = $stmt->fetchObject()) {
-            $versions[$row->level]=array("name"=>$row->typename,"typeid"=>$row->typeid);
-        }
-        return $versions;
-    }
-
-    public function decryptors($typeid)
+    public function decryptors()
     {
         $sql=<<<EOS
         SELECT distinct
@@ -263,21 +234,16 @@ EOS;
         COALESCE(dta3.valueInt,dta3.valueFloat) me,
         COALESCE(dta4.valueInt,dta4.valueFloat) te,
         COALESCE(dta5.valueInt,dta5.valueFloat) runs
-        FROM $this->schemaName.invTypes 
-        JOIN $this->schemaName.industryActivityMaterials iam 
-            ON (iam.materialtypeid=invTypes.typeid and iam.activityid=8 and groupid=716)
-        JOIN $this->schemaName.industryActivityProducts iap ON (iam.typeid=iap.typeid)
-        JOIN $this->schemaName.dgmTypeAttributes dta on (dta.typeid=invTypes.typeid and dta.attributeID=1115)
-        JOIN $this->schemaName.invTypes it2 on (it2.groupid=dta.valueInt)
+        FROM $this->schemaName.invTypes it2
         JOIN $this->schemaName.dgmTypeAttributes dta2 on (dta2.typeid=it2.typeid and dta2.attributeID=1112)
         JOIN $this->schemaName.dgmTypeAttributes dta3 on (dta3.typeid=it2.typeid and dta3.attributeID=1113)
         JOIN $this->schemaName.dgmTypeAttributes dta4 on (dta4.typeid=it2.typeid and dta4.attributeID=1114)
         JOIN $this->schemaName.dgmTypeAttributes dta5 on (dta5.typeid=it2.typeid and dta5.attributeID=1124)
-        WHERE iap.producttypeid=:typeid or iam.typeid=:typeid
+        WHERE it2.groupid=1304;
 
 EOS;
         $stmt = $this->dbh->prepare($sql);
-        $stmt->execute(array(":typeid"=>$typeid));
+        $stmt->execute();
         $decryptors=array();
         while ($row = $stmt->fetchObject()) {
             $decryptors[]=array(
