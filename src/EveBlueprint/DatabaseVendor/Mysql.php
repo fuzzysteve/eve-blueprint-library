@@ -96,12 +96,14 @@ EOS;
     public function activityMaterials($typeid)
     {
         $sql=<<<EOS
-        SELECT it.typeName name, it.typeid,quantity quantity,consume,activityID
+        SELECT it.typeName name, it.typeid,iam.quantity quantity,consume,iam.activityID,coalesce(iap.typeid,-1) maketype
         FROM $this->schemaName.industryActivityMaterials iam
         join $this->schemaName.invTypes it on (iam.materialTypeID = it.typeID)
+        left join $this->schemaName.industryActivityProducts iap on (iam.materialTypeID=iap.productTypeID)
         where
         iam.typeID=:typeid 
 EOS;
+echo $sql;
         $stmt = $this->dbh->prepare($sql);
         $stmt->execute(array(":typeid"=>$typeid));
         $materials=array();
@@ -111,6 +113,7 @@ EOS;
                 "name"=>$row->name,
                 "quantity"=>(int)$row->quantity,
                 "consume"=>(int)$row->consume,
+                "maketype"=>(int)$row->maketype
             );
         }
         if (!isset($materials[8])) {
