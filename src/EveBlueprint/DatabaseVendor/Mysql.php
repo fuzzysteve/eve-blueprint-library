@@ -103,7 +103,6 @@ EOS;
         where
         iam.typeID=:typeid 
 EOS;
-echo $sql;
         $stmt = $this->dbh->prepare($sql);
         $stmt->execute(array(":typeid"=>$typeid));
         $materials=array();
