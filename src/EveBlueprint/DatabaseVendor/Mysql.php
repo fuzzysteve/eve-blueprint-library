@@ -168,6 +168,32 @@ EOS;
             }
         }
         $sql=<<<EOS
+        SELECT distinct left(
+            assemblyLineTypeName,
+            if(instr(assemblyLineTypeName,'Factory'),instr(assemblyLineTypeName,'Factory')-2,length(assemblyLineTypeName))
+            ) name 
+        FROM $this->schemaName.invTypes
+        JOIN $this->schemaName.industryActivityProducts iap on (invTypes.typeID=iap.producttypeID and iap.activityID=1)
+        JOIN $this->schemaName.invGroups on invTypes.groupid=invGroups.groupid 
+        JOIN $this->schemaName.ramAssemblyLineTypes ralt  
+        LEFT JOIN $this->schemaName.ramAssemblyLineTypeDetailPerGroup raltdpg 
+            on (ralt.assemblyLineTypeID=raltdpg.assemblyLineTypeID AND raltdpg.groupid=invTypes.groupid)  
+        LEFT JOIN $this->schemaName.ramAssemblyLineTypeDetailPerCategory raltdpc 
+            on (ralt.assemblyLineTypeID=raltdpc.assemblyLineTypeID AND raltdpc.categoryID=invGroups.categoryid)
+        WHERE ralt.activityID=1 
+        AND coalesce(raltdpg.assemblyLineTypeID,raltdpc.assemblyLineTypeID,null) is not null 
+        AND iap.typeID=:typeid
+EOS;
+        $stmt = $this->dbh->prepare($sql);
+        $stmt->execute(array(":typeid"=>$typeid));
+        $row = $stmt->fetchObject();
+        $facilities=array();
+        while ($row=$stmt->fetchObject()) {
+            $facilities[]=$row->name;
+        }
+
+
+        $sql=<<<EOS
          select maxProductionLimit,iap.producttypeid,typename,iap.quantity,coalesce(metaGroupID,1) techLevel
          from $this->schemaName.industryBlueprints ib
          join $this->schemaName.industryActivityProducts iap on (ib.typeID=iap.typeID and activityID=1)
@@ -184,6 +210,7 @@ EOS;
         $details['productTypeName']=$row->typename;
         $details['productQuantity']=$row->quantity;
         $details['times']=$times;
+        $details['facilities']=$facilities;
         $details['techLevel']=$row->techLevel;
         $sql=<<<EOS
         SELECT sum(quantity*adjustedprice) price 
