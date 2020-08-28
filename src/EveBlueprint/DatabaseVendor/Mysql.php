@@ -209,7 +209,24 @@ EOS;
         $details['productQuantity']=$row->quantity;
         $details['times']=$times;
         $details['facilities']=$facilities;
+    
+        $sql=<<<EOS
+         select max(techlevel) techLevel from(
+         select 1 techlevel 
+         union
+        select 2 techlevel
+         from $this->schemaName.industryActivityProducts iap1
+         join $this->schemaName.industryActivityProducts iap2 on iap1.producttypeid=iap2.typeid and iap1.activityid=8 and iap2.activityid=1
+         where iap2.producttypeid=:typeid) t1;
+EOS;
+        $stmt = $this->dbh->prepare($sql);
+        $stmt->execute(array(":typeid"=>$details['productTypeID']));
+        $row = $stmt->fetchObject();
         $details['techLevel']=$row->techLevel;
+         
+
+
+
         $sql=<<<EOS
         SELECT sum(quantity*adjustedprice) price 
         FROM $this->schemaName.industryActivityMaterials iam 
