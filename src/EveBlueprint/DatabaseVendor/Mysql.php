@@ -192,11 +192,11 @@ EOS;
 
 
         $sql=<<<EOS
-         select maxProductionLimit,iap.producttypeid,typename,iap.quantity,coalesce(metaGroupID,1) techLevel
+         select maxProductionLimit,iap.producttypeid,typename,iap.quantity,coalesce(valueInt,valueFloat,1) techLevel
          from $this->schemaName.industryBlueprints ib
          join $this->schemaName.industryActivityProducts iap on (ib.typeID=iap.typeID and activityID=1)
          join $this->schemaName.invTypes on (iap.productTypeID=invTypes.typeid)
-         left join $this->schemaName.invMetaTypes on (iap.productTypeID=invMetaTypes.typeid)
+         left join $this->schemaName.dgmTypeAttributes dta  on (iap.productTypeID=dta.typeid and attributeid=422)
          where ib.typeID=:typeid
 EOS;
         $stmt = $this->dbh->prepare($sql);
