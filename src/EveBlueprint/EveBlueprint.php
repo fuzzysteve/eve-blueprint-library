@@ -33,12 +33,6 @@ class EveBlueprint
             case 'mysql':
                 $this->sql=new \EveBlueprint\DatabaseVendor\Mysql($dbh);
                 break;
-            case 'postgres':
-                $this->sql=new \EveBlueprint\DatabaseVendor\Postgres();
-                break;
-            case 'postgres':
-                $this->sql=new \EveBlueprint\DatabaseVendor\Sqlite();
-                break;
             default:
                 throw new \Exception('Database type not handled. please write a new DatabaseVendor class for it');
         }
