@@ -15,5 +15,5 @@
     "autoload": {
         "psr-0": { "EveBlueprint": "src/"}
     },
-    "require": { "fuzzysteve/eve-character":"*"}
+    "require": { "fuzzysteve/eve-character":"dev-master"}
 }
