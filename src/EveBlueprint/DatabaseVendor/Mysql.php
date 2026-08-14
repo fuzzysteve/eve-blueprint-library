@@ -151,7 +151,7 @@ EOS;
         }
         if (!isset($times[8])) {
             $sql=<<<EOS
-            select activityID,time
+            select industryActivity.activityID,time
             from $this->schemaName.industryActivity
             join $this->schemaName.industryActivityProducts on
                 (industryActivityProducts.typeID=industryActivity.typeID
